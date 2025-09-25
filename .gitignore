@@ -5,6 +5,8 @@ node_modules/
 
 # Expo
 .expo/
+.expo-shared/
+.expo-dev/
 dist/
 web-build/
 expo-env.d.ts
@@ -18,26 +20,58 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
-# Metro
+# Metro / bundler
 .metro-health-check*
-
-# debug
+.cache/
 npm-debug.*
 yarn-debug.*
 yarn-error.*
 
-# macOS
+# logs
+logs
+*.log
+
+# macOS / Windows
 .DS_Store
+Thumbs.db
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
 *.tsbuildinfo
 
+# coverage
+coverage/
+
+# generated example
 app-example
 
 # generated native folders
 /ios
 /android
+
+# gradle (Android 빌드 캐시)
+.gradle/
+**/build/
+
+# xcode (iOS 빌드 캐시)
+*.xcuserstate
+*.xcuserdata/
+*.xcworkspace/
+DerivedData/
+
+# IDE settings
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.iml
+
+# fastlane (배포 자동화 산출물)
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
