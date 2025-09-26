@@ -12,6 +12,7 @@ export default function RootLayout() {
       publishableKey={process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY}
       tokenCache={tokenCache}
     >
+      {/* 현재 활성화된 route가 slot에 들어옴 */}
       <Slot />
     </ClerkProvider>
   );
