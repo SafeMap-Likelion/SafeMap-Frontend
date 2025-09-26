@@ -1,6 +1,7 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
+    "types": ["nativewind/types"],
     "strict": true,
     "baseUrl": ".", // 기준 경로
     "paths": {
