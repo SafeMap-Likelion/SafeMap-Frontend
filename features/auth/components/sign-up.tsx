@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import { useSignUp } from "@clerk/clerk-expo";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 
-export default function SignUpScreen() {
+export function SignUp({ onSignInPress }: { onSignInPress: () => void }) {
   const { isLoaded, signUp, setActive } = useSignUp();
   const router = useRouter();
 
@@ -52,7 +52,7 @@ export default function SignUpScreen() {
       // and redirect the user
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace("/");
+        router.replace("/(main)");
       } else {
         // If the status is not complete, check why. User may need to
         // complete further steps.
@@ -102,9 +102,9 @@ export default function SignUpScreen() {
         </TouchableOpacity>
         <View style={{ display: "flex", flexDirection: "row", gap: 3 }}>
           <Text>Already have an account?</Text>
-          <Link href="/sign-in">
+          <TouchableOpacity onPress={onSignInPress}>
             <Text>Sign in</Text>
-          </Link>
+          </TouchableOpacity>
         </View>
       </>
     </View>

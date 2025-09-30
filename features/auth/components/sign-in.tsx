@@ -1,9 +1,9 @@
 import { useSignIn } from "@clerk/clerk-expo";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { Text, TextInput, TouchableOpacity, View } from "react-native";
 import React from "react";
 
-export default function Page() {
+export function SignIn({ onSignUpPress }: { onSignUpPress: () => void }) {
   const { signIn, setActive, isLoaded } = useSignIn();
   const router = useRouter();
 
@@ -25,7 +25,7 @@ export default function Page() {
       // and redirect the user
       if (signInAttempt.status === "complete") {
         await setActive({ session: signInAttempt.createdSessionId });
-        router.replace("/");
+        router.replace("/(main)");
       } else {
         // If the status isn't complete, check why. User might need to
         // complete further steps.
@@ -58,9 +58,9 @@ export default function Page() {
       </TouchableOpacity>
       <View style={{ display: "flex", flexDirection: "row", gap: 3 }}>
         <Text>Don't have an account?</Text>
-        <Link href="/sign-up">
+        <TouchableOpacity onPress={onSignUpPress}>
           <Text>Sign up</Text>
-        </Link>
+        </TouchableOpacity>
       </View>
     </View>
   );

@@ -8,7 +8,6 @@ export default function KakaoMap() {
     <SafeAreaView style={styles.container}>
       <WebView
         originWhitelist={["*"]}
-        // source={require("../assets/kakao.html")}
         source={{ uri: "https://kakao-map-web.vercel.app" }}
         javaScriptEnabled={true}
         domStorageEnabled={true}

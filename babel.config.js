@@ -6,6 +6,7 @@ module.exports = function (api) {
       [
         "module-resolver",
         {
+          root: ["./"],
           alias: {
             "@": "./",
             "@api": "./api",
@@ -18,7 +19,7 @@ module.exports = function (api) {
           },
         },
       ],
-      "nativewind/babel",
+      "react-native-reanimated/plugin", // 반드시 마지막
     ],
   };
 };
