@@ -11,7 +11,9 @@ export default function AppLayout() {
   }
 
   if (isSignedIn) {
-    return <Redirect href="/(main)" />;
+    return <Redirect href="/(main)/map-interaction-test-page" />;
+    //rn-map webview테스트를 위해서 위 코드를 아래 코드로 임시로 교체해 주세요!
+    // return <Redirect href="/(main)/map-interaction-test-page" />;
   }
 
   return <Redirect href="/(auth)" />;
