@@ -2,6 +2,7 @@ import { GluestackUIProvider } from "@gluestack-ui/themed";
 import { config } from "@gluestack-ui/config";
 import { SignOutButton } from "@/features/auth/components/SignOutButton";
 import { Stack } from "expo-router/stack";
+import BottomNavBar from "@/components/BottomNavBar"
 
 export default function Layout() {
   return (
@@ -16,6 +17,7 @@ export default function Layout() {
           }}
         />
       </Stack>
+      <BottomNavBar />
     </GluestackUIProvider>
   );
 }
