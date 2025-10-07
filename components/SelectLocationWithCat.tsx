@@ -40,7 +40,7 @@ export default function SelectLocationWithCat() {
       py={15}
       px={30}
       rounded="$2xl"
-      alignSelf="center"
+      w="100%"
     >
       <VStack flex={1}>
         <HStack alignItems="center" mb={15}>
