@@ -1,4 +1,3 @@
-// app/(main)/report-incident.tsx
 import React, { useState } from "react";
 import {
   Box,
@@ -11,14 +10,11 @@ import {
   InputField,
   Textarea,
   TextareaInput,
-  Button,
-  ButtonText,
   Icon,
 } from "@gluestack-ui/themed";
-import { ArrowLeftIcon, ImageIcon } from "@gluestack-ui/themed";
+import { ImageIcon } from "@gluestack-ui/themed";
 import { useRouter } from "expo-router";
-// import { Image as RNImage } from "react-native";
-import MapWrapper from "./MapWrapper";
+import MapWrapper from "../../components/MapWrapper";
 
 //타입/상수
 const DangerLevel = ["낮음", "중간", "높음"];
@@ -30,10 +26,6 @@ const CATEGORIES = [
   "🖥️ 장애/오류",
   "📌 기타/특수",
 ];
-
-// 정적 지도 대체 이미지
-// const MAP_PLACEHOLDER =
-//   "https://images.unsplash.com/photo-1526775417991-3f88f10405ff?q=80&w=1200&auto=format&fit=crop";
 
 //작은 컴포넌트들
 function SelectChip({
@@ -49,7 +41,6 @@ function SelectChip({
   bg?: string | ((selected: boolean) => string);
   txt?: string | ((selected: boolean) => string);
 }) {
-  // bg, txt가 함수면 selected에 따라 동적으로 결정, 아니면 값 그대로 사용
   const background =
     typeof bg === "function"
       ? bg(selected)
@@ -70,18 +61,30 @@ function SelectChip({
   );
 }
 
-//메인 화면 (정적 UI)
-export default function EventAlarm() {
+// 게시물 수정 화면
+export default function PostEditScreen() {
   const router = useRouter();
 
+  // 기존 게시물 정보로 초기화 (나중에 props나 route params로 받아올 수 있음)
   const [category, setCategory] = useState<string>("⛑️ 시설/인프라");
   const [level, setLevel] = useState<string>("중간");
-  const [address, setAddress] = useState<string>("");
-  const [title, setTitle] = useState<string>("");
-  const [desc, setDesc] = useState<string>("");
+  const [address, setAddress] = useState<string>("서울대학교 관악캠퍼스 정문");
+  const [title, setTitle] = useState<string>("서울대학교 정문 가로수 넘어짐");
+  const [desc, setDesc] = useState<string>(
+    "집 가는 길에 정문에서 누워있는 나무 발견.\n학교 측에서 빨리 조치를 해야할 것 같은데,, 너무 위험함. 다행히 주변에 사람이 없었는데 빨리 정리해줬으면 좋겠당."
+  );
 
-  //필수항목 작성했을 때만 제출 버튼이 눌리도록!
   const canSubmit = title.trim().length > 0 && address.trim().length > 0;
+
+  const handleCancel = () => {
+    router.back();
+  };
+
+  const handleUpdate = () => {
+    // TODO: 수정 로직 구현
+    console.log("게시물 수정");
+    router.back();
+  };
 
   return (
     <Box flex={1} bg="$white">
@@ -94,25 +97,23 @@ export default function EventAlarm() {
       >
         {/* Header */}
         <HStack alignItems="center" justifyContent="center" m="$10">
-          <Heading size="2xl">🔈사건/사고 알리기</Heading>
-          <Box w="$6" /> {/* spacer */}
+          <Heading size="2xl">🔈사건/사고 수정하기</Heading>
+          <Box w="$6" />
         </HStack>
 
         {/* 사고 유형 */}
-        {/* 제목 + 빨간 점 */}
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             사고 유형
             <Text color="$red500"> *</Text>
           </Text>
         </HStack>
-        {/* 연한 회색 배경 박스 안에 칩들 배치 */}
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
           <HStack
             style={{
               flexDirection: "row",
               flexWrap: "wrap",
-              justifyContent: "center", // 가로기준 가운데 정렬
+              justifyContent: "center",
             }}
           >
             {CATEGORIES.map((c) => (
@@ -130,7 +131,6 @@ export default function EventAlarm() {
         </Box>
 
         {/* 위험도 */}
-        {/* 제목 + 빨간 점 */}
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             위험도
@@ -159,7 +159,7 @@ export default function EventAlarm() {
           </HStack>
         </Box>
 
-        {/* 지도 표시 위치: 정적 이미지로 대체 */}
+        {/* 지도 표시 위치 */}
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             지도 표시 위치
@@ -189,12 +189,10 @@ export default function EventAlarm() {
           justifyContent="center"
           alignItems="center"
         >
-          {/* KakaoMap은 보통 WebView 기반이라 부모 높이에 맞춰야 해서 width/height 100%를 줍니다 */}
           <MapWrapper />
         </Box>
 
-        {/* 사고 위치(주소 텍스트) */}
-
+        {/* 사고 위치 */}
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             사고 위치
@@ -210,7 +208,6 @@ export default function EventAlarm() {
         </Input>
 
         {/* 제목 */}
-
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             제목
@@ -225,7 +222,7 @@ export default function EventAlarm() {
           />
         </Input>
 
-        {/* 현장 이미지: 정적 UI(업로드 없음) */}
+        {/* 현장 이미지 */}
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             현장 이미지
@@ -250,7 +247,6 @@ export default function EventAlarm() {
         </Box>
 
         {/* 설명 */}
-
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold">
             설명
@@ -265,19 +261,37 @@ export default function EventAlarm() {
           />
         </Textarea>
 
-        {/* 제출: 정적 UI이므로 동작 없음 */}
-        <HStack mb="$3" justifyContent="center">
-          <Button
-            bg="$blue600"
-            width="40%"
+        {/* 수정 취소 / 사건 수정 버튼 */}
+        <HStack mb="$3" justifyContent="center" gap="$3">
+          <Pressable
+            bg="#9B9B9B"
+            w={88}
+            h={42}
+            borderRadius={15}
+            justifyContent="center"
+            alignItems="center"
+            onPress={handleCancel}
+          >
+            <Text color="$white" fontSize={16} fontWeight="$bold">
+              수정 취소
+            </Text>
+          </Pressable>
+
+          <Pressable
+            bg="#3897DF"
+            w={88}
+            h={42}
+            borderRadius={15}
+            justifyContent="center"
+            alignItems="center"
             opacity={canSubmit ? 1 : 0.5}
             disabled={!canSubmit}
-            onPress={() => {}}
+            onPress={handleUpdate}
           >
-            <ButtonText color="$white" fontWeight="$bold">
-              사건 알리기
-            </ButtonText>
-          </Button>
+            <Text color="$white" fontSize={16} fontWeight="$bold">
+              사건 수정
+            </Text>
+          </Pressable>
         </HStack>
       </ScrollView>
     </Box>
