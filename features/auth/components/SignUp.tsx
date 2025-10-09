@@ -46,7 +46,7 @@ export function SignUp({ onSignInPress }: { onSignInPress: () => void }) {
       });
       if (signUpAttempt.status === "complete") {
         await setActive({ session: signUpAttempt.createdSessionId });
-        router.replace("/(main)");
+        router.replace("/(main)/select-location-page-auth");
       } else {
         console.error(JSON.stringify(signUpAttempt, null, 2));
       }

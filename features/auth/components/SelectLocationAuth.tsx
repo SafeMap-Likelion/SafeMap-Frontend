@@ -52,13 +52,7 @@ export function SelectLocationAuth() {
         />
       </HStack>
 
-      <Box
-        width="90%"
-        rounded="$2xl"
-        justifyContent="center"
-        alignItems="center"
-        marginTop={70}
-      >
+      <Box width="90%" rounded="$2xl" marginTop={50}>
         <SelectLocationWithCat />
       </Box>
     </SafeAreaView>
