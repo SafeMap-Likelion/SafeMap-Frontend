@@ -1,14 +1,8 @@
-import React from 'react';
-import { useRouter } from 'expo-router'; // Import useRouter
-import {
-  Box,
-  HStack,
-  Button,
-  ButtonText,
-  View,
-} from '@gluestack-ui/themed';
+import React from "react";
+import { useRouter } from "expo-router"; // Import useRouter
+import { Box, HStack, Button, ButtonText, View } from "@gluestack-ui/themed";
 import KakaoMap from "@/components/KakaoMap";
-import Geolocation from '@/components/Geolocation';
+import Geolocation from "@/components/Geolocation";
 
 export default function HomeScreen() {
   const router = useRouter(); // Get router instance
@@ -30,11 +24,15 @@ export default function HomeScreen() {
         <Button
           size="sm"
           action="secondary"
-          onPress={() => router.push('/(main)/interest-areas-page')} // Add onPress handler
+          onPress={() => router.push("/(main)/interest-areas-page")} // Add onPress handler
         >
           <ButtonText>관심지역 모아보기</ButtonText>
         </Button>
-        <Button size="sm" action="secondary">
+        <Button
+          size="sm"
+          action="secondary"
+          onPress={() => router.push("/(main)/news-page")} // Add navigation to news page
+        >
           <ButtonText>'봉천동' 뉴스보러가기</ButtonText>
         </Button>
       </HStack>

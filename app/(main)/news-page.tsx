@@ -1,1 +1,6 @@
-//news/NewsListViewScreen,NewsDetailViewScreen 라우팅
+import React from "react";
+import NewsListViewScreen from "../../features/news/NewsListViewScreen";
+
+export default function NewsPage() {
+  return <NewsListViewScreen />;
+}
