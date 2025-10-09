@@ -3,7 +3,7 @@ import { Box, HStack, Text, Image } from "@gluestack-ui/themed";
 import { SafeAreaView } from "react-native-safe-area-context";
 import React from "react";
 
-export function SelectLocationAuth() {
+export default function SelectLocationAuth() {
   return (
     <SafeAreaView
       style={{
@@ -17,7 +17,7 @@ export function SelectLocationAuth() {
         alignItems="center"
         justifyContent="center"
         space="md"
-        style={{ position: "absolute", top: 80 }}
+        style={{ position: "absolute", top: 90 }}
       >
         <Box
           bg="#EEF6FF"
@@ -52,7 +52,7 @@ export function SelectLocationAuth() {
         />
       </HStack>
 
-      <Box width="90%" rounded="$2xl" marginTop={50}>
+      <Box width="90%" height="40%" rounded="$2xl">
         <SelectLocationWithCat />
       </Box>
     </SafeAreaView>
