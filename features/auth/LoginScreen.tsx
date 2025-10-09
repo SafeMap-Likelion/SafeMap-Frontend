@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { View, Text, Image, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Box, VStack, Button, ButtonText } from "@gluestack-ui/themed";
-import { SignIn } from "@/features/auth/components/SignIn";
-import { SignUp } from "@/features/auth/components/SignUp";
+import { SignIn } from "@/features/auth/components/Sign-in";
+import { SignUp } from "@/features/auth/components/Sign-up";
 
 export default function LoginScreen() {
   const [mode, setMode] = useState<"signin" | "signup" | null>(null);
