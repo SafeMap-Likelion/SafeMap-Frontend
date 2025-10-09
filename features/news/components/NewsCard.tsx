@@ -35,7 +35,7 @@ export default function NewsCard({ item }: any) {
         p="$3"
         alignItems="center"
       >
-        <VStack flex={1} space="xs">
+        <VStack flex={1}>
           <Text fontFamily="Pretendard" fontSize={11} color="$textDark600">
             {item.source}
           </Text>
@@ -44,6 +44,8 @@ export default function NewsCard({ item }: any) {
             fontSize={16}
             fontWeight="$bold"
             color="#000000"
+            numberOfLines={2}
+            my={1}
           >
             {item.title}
           </Text>
@@ -55,8 +57,8 @@ export default function NewsCard({ item }: any) {
           <Image
             source={{ uri: item.image }}
             alt="thumbnail"
-            width={68}
-            height={91}
+            width={91}
+            height={68}
             rounded="$lg"
           />
         </Box>
