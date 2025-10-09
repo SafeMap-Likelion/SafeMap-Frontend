@@ -14,7 +14,7 @@ export default function AppLayout() {
     //default
     return <Redirect href="/(main)" />;
     //rn-map webview를 테스트해보고 싶으시다면 위 코드를 아래 코드로 임시로 교체해 주세요!
-    // return <Redirect href="/(main)/map-interaction-test-page" />;
+    //return <Redirect href="/(main)/map-interaction-test-page" />;
   }
 
   return <Redirect href="/(auth)" />;
