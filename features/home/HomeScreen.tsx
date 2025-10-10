@@ -1,56 +1,85 @@
-import React from 'react';
-import { useRouter } from 'expo-router'; // Import useRouter
+import React from "react";
+import { useRouter } from "expo-router"; // Import useRouter
 import {
   Box,
   HStack,
   Button,
   ButtonText,
   View,
-} from '@gluestack-ui/themed';
+  VStack,
+} from "@gluestack-ui/themed";
 import KakaoMap from "@/components/KakaoMap";
-import Geolocation from '@/components/Geolocation';
+import Geolocation from "@/components/Geolocation";
+import MapControlPanel from "./components/MapControlPanel";
+import { Image } from "react-native";
 
 export default function HomeScreen() {
-  const router = useRouter(); // Get router instance
+  const router = useRouter();
 
   return (
-    <Box flex={1}>
-      {/* Header */}
-      <HStack
-        p="$4"
-        pt="$10"
-        justifyContent="space-between"
-        alignItems="center"
-        position="absolute"
-        top={0}
-        left={0}
-        right={0}
-        zIndex={1} // 헤더가 지도 위에 오도록 설정
-      >
-        <Button
-          size="sm"
-          action="secondary"
-          onPress={() => router.push('/(main)/interest-areas-page')} // Add onPress handler
-        >
-          <ButtonText>관심지역 모아보기</ButtonText>
-        </Button>
-        <Button size="sm" action="secondary">
-          <ButtonText>'봉천동' 뉴스보러가기</ButtonText>
-        </Button>
-      </HStack>
+    <Box flex={1} position="relative">
+      {/*지도 (바닥 레이어) */}
+      <KakaoMap />
 
-      {/* Map and other components */}
-      <View style={{ flex: 1 }}>
-        <KakaoMap />
-        <Box
-          position="absolute"
-          top={120} // 헤더 높이를 고려하여 조정
-          width="100%"
-          padding={10}
-        >
-          <Geolocation />
+      {/* 지도 위에 떠 있는 패널*/}
+      <Box
+        position="absolute"
+        zIndex={10}
+        alignSelf="center"
+        top={50}
+        width="95%"
+      >
+        <Box flex={1} mb={15}>
+          <MapControlPanel />
         </Box>
-      </View>
+        <HStack space="sm" justifyContent="center" mb={10}>
+          <Button
+            action="secondary"
+            bg="$white"
+            borderWidth={1}
+            borderColor="#e6e6e6"
+            rounded="$xl"
+            px={10}
+            py={10}
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={2}
+            onPress={() => router.push("/(main)/interest-areas-page")}
+          >
+            <ButtonText fontSize={15} color="#333" fontWeight="800">
+              📍 관심 지역 모아보기
+            </ButtonText>
+          </Button>
+
+          <Button
+            action="secondary"
+            bg="$white"
+            borderWidth={1}
+            borderColor="#e6e6e6"
+            rounded="$xl"
+            px={10}
+            py={10}
+            shadowColor="#000"
+            shadowOpacity={0.05}
+            shadowRadius={2}
+          >
+            <HStack alignItems="center" space="xs">
+              <ButtonText fontSize={15} color="#333" fontWeight="800">
+                '봉천동' 뉴스 보러가기
+              </ButtonText>
+              <Image
+                source={require("@/assets/images/icon3.png")}
+                style={{ width: 24, height: 24 }}
+              />
+            </HStack>
+          </Button>
+        </HStack>
+      </Box>
+
+      {/* ③ Geolocation (필요 시 다른 위치에 오버레이) */}
+      <Box position="absolute" bottom={40} right={20} zIndex={10}>
+        <Geolocation />
+      </Box>
     </Box>
   );
 }
