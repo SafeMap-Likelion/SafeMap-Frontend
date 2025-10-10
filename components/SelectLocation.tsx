@@ -32,7 +32,7 @@ export default function SelectLocationWithCat() {
 
   return (
     <Box
-      flex={1}
+      width="90%"
       bg="#f3f3f3"
       py={15}
       px={30}
@@ -83,16 +83,8 @@ export default function SelectLocationWithCat() {
                   </VStack>
                 </ScrollView>
               ) : (
-                <Box
-                  flex={1}
-                  justifyContent="center"
-                  alignItems="center"
-                >
-                  <Text
-                    fontSize={12}
-                    fontWeight={"500"}
-                    color="#a3a3a3"
-                  >
+                <Box flex={1} justifyContent="center" alignItems="center">
+                  <Text fontSize={12} fontWeight={"500"} color="#a3a3a3">
                     검색 결과가 없습니다.
                   </Text>
                 </Box>

@@ -5,7 +5,7 @@ import { WebView } from "react-native-webview";
 
 export default function KakaoMap() {
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <WebView
         originWhitelist={["*"]}
         source={{ uri: "https://kakao-map-web.vercel.app" }}
