@@ -6,11 +6,17 @@ import {
   Pressable,
   Text,
 } from "@gluestack-ui/themed";
+import { useWindowDimensions } from "react-native";
 import MyPostScreen from '@/features/mypage/MyPostScreen';
 import SettingScreen from '@/features/mypage/SettingScreen';
 
 const MyPage = () => {
   const [activeTab, setActiveTab] = useState<"posts" | "settings">("posts");
+  const { width } = useWindowDimensions();
+
+  const horizontalPadding = 20;
+  const gap = 8;
+  const buttonWidth = (width - horizontalPadding * 2 - gap) / 2;
 
   return (
     <Box flex={1} bg="$white">
@@ -22,10 +28,10 @@ const MyPage = () => {
       </Box>
 
       {/* 탭 버튼 */}
-      <HStack px="$4" gap="$2" mb="$4">
+      <HStack px={horizontalPadding} gap={gap} mb="$4">
         <Pressable
           h={32}
-          w={173.5}
+          w={buttonWidth}
           bg={activeTab === "posts" ? "#1C9DFF" : "#BEBEBE"}
           borderRadius={20}
           onPress={() => setActiveTab("posts")}
@@ -43,7 +49,7 @@ const MyPage = () => {
 
         <Pressable
           h={32}
-          w={173.5}
+          w={buttonWidth}
           bg={activeTab === "settings" ? "#1C9DFF" : "#BEBEBE"}
           borderRadius={20}
           onPress={() => setActiveTab("settings")}

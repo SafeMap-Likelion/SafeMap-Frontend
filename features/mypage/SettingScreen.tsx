@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Box, VStack, HStack, Text, Pressable, ScrollView, Input, InputField, Icon, CloseIcon } from "@gluestack-ui/themed";
+import { useWindowDimensions } from "react-native";
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import SelectLocationWithCat from "../../components/SelectLocationWithCat";
@@ -8,11 +9,19 @@ import SelectLocationWithCat from "../../components/SelectLocationWithCat";
 const SettingScreen = () => {
   const { signOut } = useAuth();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState("사용자123");
   const [snsAccount, setSnsAccount] = useState("example@gmail.com");
   const [interestCategory, setInterestCategory] = useState("학교");
   const [interestLocation, setInterestLocation] = useState("서울특별시 관악구 관악로 1");
+
+  const horizontalPadding = 20;
+  const inputWidth = width - horizontalPadding * 2;
+  const categoryBoxWidth = 60;
+  const locationBoxWidth = isEditing
+    ? inputWidth - categoryBoxWidth - 5 - 30 - 10 // 카테고리 박스 - 간격 - 삭제 아이콘 - 여유공간
+    : inputWidth - categoryBoxWidth - 5;
 
   const handleEdit = () => {
     if (isEditing) {
@@ -52,7 +61,7 @@ const SettingScreen = () => {
       <ScrollView
         scrollEnabled={isEditing}
         contentContainerStyle={{
-          paddingHorizontal: 20,
+          paddingHorizontal: horizontalPadding,
           paddingTop: 40,
           paddingBottom: 100,
         }}
@@ -66,7 +75,7 @@ const SettingScreen = () => {
             {isEditing ? (
               <Input
                 bg="#F3F3F3"
-                w={353}
+                w={inputWidth}
                 h={32}
                 borderRadius={15}
                 borderColor="transparent"
@@ -83,7 +92,7 @@ const SettingScreen = () => {
             ) : (
               <Box
                 bg="#F3F3F3"
-                w={353}
+                w={inputWidth}
                 h={32}
                 borderRadius={15}
                 justifyContent="center"
@@ -101,10 +110,10 @@ const SettingScreen = () => {
             <Text fontSize={18} fontWeight="$bold" mb={5}>
               관심지역
             </Text>
-            <HStack gap={5} alignItems="center" mb={35}>
+            <HStack gap={5} alignItems="center">
               <Box
                 bg="#2FA5FF"
-                w={60}
+                w={categoryBoxWidth}
                 h={32}
                 borderRadius={15}
                 justifyContent="center"
@@ -116,7 +125,7 @@ const SettingScreen = () => {
               </Box>
               <Box
                 bg="#F3F3F3"
-                w={isEditing ? 258 : 288}
+                w={locationBoxWidth}
                 h={32}
                 borderRadius={15}
                 justifyContent="center"
@@ -135,8 +144,8 @@ const SettingScreen = () => {
 
             {/* 지역 추가 */}
             {isEditing && (
-              <VStack w="100%">
-                <Text fontSize={16} fontWeight="$bold" mb={5}>
+              <VStack w="100%" mt={26}>
+                <Text fontSize={18} fontWeight="$bold" mb={5}>
                   지역 추가
                 </Text>
                 <Box w="100%">
@@ -154,7 +163,7 @@ const SettingScreen = () => {
             {isEditing ? (
               <Input
                 bg="#F3F3F3"
-                w={353}
+                w={inputWidth}
                 h={32}
                 borderRadius={15}
                 borderColor="transparent"
@@ -171,7 +180,7 @@ const SettingScreen = () => {
             ) : (
               <Box
                 bg="#F3F3F3"
-                w={353}
+                w={inputWidth}
                 h={32}
                 borderRadius={15}
                 justifyContent="center"
@@ -188,7 +197,7 @@ const SettingScreen = () => {
         {/* 수정/저장 버튼 */}
         <Pressable
           bg="#1C9DFF"
-          w={355}
+          w={inputWidth}
           h={32}
           borderRadius={20}
           justifyContent="center"

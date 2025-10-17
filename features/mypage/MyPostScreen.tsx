@@ -265,7 +265,7 @@ const MyPostScreen = () => {
           </Text>
         }
         contentContainerStyle={{
-          paddingHorizontal: 16,
+          paddingHorizontal: 20,
           paddingTop: 20,
           paddingBottom: 100,
         }}

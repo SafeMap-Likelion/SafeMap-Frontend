@@ -87,7 +87,7 @@ export default function EventAlarm() {
     <Box flex={1} bg="$white">
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: 16,
+          paddingHorizontal: 20,
           paddingTop: 12,
           paddingBottom: 120,
         }}
@@ -101,7 +101,7 @@ export default function EventAlarm() {
         {/* 사고 유형 */}
         {/* 제목 + 빨간 점 */}
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             사고 유형
             <Text color="$red500"> *</Text>
           </Text>
@@ -132,7 +132,7 @@ export default function EventAlarm() {
         {/* 위험도 */}
         {/* 제목 + 빨간 점 */}
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             위험도
             <Text color="$red500"> *</Text>
           </Text>
@@ -161,10 +161,10 @@ export default function EventAlarm() {
 
         {/* 지도 표시 위치: 정적 이미지로 대체 */}
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             지도 표시 위치
-            <Text color="$coolGray800" fontSize={8}>
-              현재 위치로 자동 입력됩니다.
+            <Text color="$coolGray800" fontSize={10}>
+              *현재 위치로 자동 입력됩니다.
             </Text>
           </Text>
         </HStack>
@@ -196,7 +196,7 @@ export default function EventAlarm() {
         {/* 사고 위치(주소 텍스트) */}
 
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             사고 위치
             <Text color="$red500"> *</Text>
           </Text>
@@ -212,7 +212,7 @@ export default function EventAlarm() {
         {/* 제목 */}
 
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             제목
             <Text color="$red500"> *</Text>
           </Text>
@@ -227,7 +227,7 @@ export default function EventAlarm() {
 
         {/* 현장 이미지: 정적 UI(업로드 없음) */}
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             현장 이미지
           </Text>
         </HStack>
@@ -252,7 +252,7 @@ export default function EventAlarm() {
         {/* 설명 */}
 
         <HStack mb="$2">
-          <Text color="$coolGray800" fontWeight="$semibold">
+          <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             설명
           </Text>
         </HStack>
