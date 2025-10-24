@@ -84,19 +84,20 @@ export default function EventAlarm() {
   const canSubmit = title.trim().length > 0 && address.trim().length > 0;
 
   return (
-    <Box flex={1} bg="$white">
+    <Box flex={1} bg="$white" pt={60}>
+      {/* Header */}
+      <Box px="$4" pb="$4" bg="$white">
+        <Heading size="2xl" fontWeight="$bold" textAlign="center">
+          🔈사건/사고 알리기
+        </Heading>
+      </Box>
+
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingTop: 12,
           paddingBottom: 120,
         }}
       >
-        {/* Header */}
-        <HStack alignItems="center" justifyContent="center" m="$10">
-          <Heading size="2xl">🔈사건/사고 알리기</Heading>
-          <Box w="$6" /> {/* spacer */}
-        </HStack>
 
         {/* 사고 유형 */}
         {/* 제목 + 빨간 점 */}
@@ -270,6 +271,7 @@ export default function EventAlarm() {
           <Button
             bg="$blue600"
             width="40%"
+            borderRadius={15}
             opacity={canSubmit ? 1 : 0.5}
             disabled={!canSubmit}
             onPress={() => {}}

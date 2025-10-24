@@ -1,34 +1,27 @@
-import {
-  Box,
-  HStack,
-  VStack,
-  Pressable,
-  Text,
-  Icon,
-} from '@gluestack-ui/themed';
-import { FontAwesome } from '@expo/vector-icons';
-import { Link, usePathname } from 'expo-router';
-import React from 'react';
+import { Box, HStack, VStack, Pressable, Text } from "@gluestack-ui/themed";
+import { FontAwesome } from "@expo/vector-icons";
+import { Link, usePathname } from "expo-router";
+import React from "react";
 
 // 요청에 따라 3개의 탭으로 재구성
 const navItems = [
   {
-    href: '/(main)/',
+    href: "/(main)/",
     iconSet: FontAwesome,
-    iconName: 'home',
-    label: '홈',
+    iconName: "home",
+    label: "홈",
   },
   {
-    href: '/(main)/event-alarm-page', 
+    href: "/(main)/event-alarm-page",
     iconSet: FontAwesome,
-    iconName: 'plus-square',
-    label: '게시물 작성',
+    iconName: "plus-square",
+    label: "사건/사고 알리기",
   },
   {
-    href: '/(main)/mypage',
+    href: "/(main)/mypage",
     iconSet: FontAwesome,
-    iconName: 'user',
-    label: '마이페이지',
+    iconName: "user",
+    label: "마이페이지",
   },
 ];
 
@@ -55,16 +48,15 @@ const BottomNavBar = () => {
             <Link href={item.href as any} asChild key={item.href}>
               <Pressable flex={1}>
                 <VStack alignItems="center" gap="$1">
-                  <Icon
-                    as={item.iconSet}
-                    name={item.iconName}
-                    color={isActive ? '$primary500' : '$textLight500'}
-                    size="xl"
+                  <FontAwesome
+                    name={item.iconName as any}
+                    size={24}
+                    color={isActive ? "#3897DF" : "#9ca3af"}
                   />
                   <Text
                     size="xs"
-                    color={isActive ? '$primary500' : '$textLight500'}
-                    fontWeight={isActive ? '$bold' : '$normal'}
+                    color={isActive ? "#3897DF" : "#9ca3af"}
+                    fontWeight={isActive ? "$bold" : "$normal"}
                   >
                     {item.label}
                   </Text>
