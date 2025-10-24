@@ -1,17 +1,6 @@
 import React from "react";
 import { useRouter } from "expo-router"; // Import useRouter
-import {
-  Box,
-  HStack,
-  Button,
-  ButtonText,
-  View,
-  VStack,
-} from "@gluestack-ui/themed";
-import KakaoMap from "@/components/KakaoMap";
-import Geolocation from "@/components/Geolocation";
-import MapControlPanel from "./components/MapControlPanel";
-import { Image } from "react-native";
+
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -29,8 +18,10 @@ export default function HomeScreen() {
         top={50}
         width="95%"
       >
+
         <Box flex={1} mb={15}>
           <MapControlPanel />
+
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>
           <Button

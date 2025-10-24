@@ -1,5 +1,5 @@
 //관심지역 모아보기 화면
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   HStack,
@@ -7,10 +7,10 @@ import {
   Icon,
   Pressable,
   Text,
-} from '@gluestack-ui/themed';
-import EventCardList from './components/EventCardList';
-import { FontAwesome } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+} from "@gluestack-ui/themed";
+import EventCardList from "./components/EventCardList";
+import { FontAwesome } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 
 // EventAlarm.tsx에서 참고한 작은 칩 컴포넌트
 function SelectChip({
@@ -28,10 +28,10 @@ function SelectChip({
         borderRadius="$full"
         px="$3.5"
         py="$2"
-        bg={selected ? '$blue600' : '$coolGray100'}
+        bg={selected ? "$blue600" : "$coolGray100"}
       >
         <Text
-          color={selected ? '$white' : '$coolGray800'}
+          color={selected ? "$white" : "$coolGray800"}
           fontWeight="$semibold"
           fontSize="$sm"
         >
@@ -48,7 +48,7 @@ function SelectChip({
  */
 export default function PostListViewScreen() {
   const router = useRouter();
-  const [selectedLocation, setSelectedLocation] = useState('집');
+  const [selectedLocation, setSelectedLocation] = useState("집");
 
   return (
     <Box flex={1} bg="$white" pt="$10">
@@ -67,7 +67,7 @@ export default function PostListViewScreen() {
           w="$8"
           alignItems="flex-start"
         >
-          <Icon as={FontAwesome} name="chevron-left" size="lg" />
+          <FontAwesome name="chevron-left" size={20} color="#000" />
         </Pressable>
 
         <Heading flex={1} textAlign="center">
@@ -82,13 +82,13 @@ export default function PostListViewScreen() {
       <HStack p="$4" gap="$3">
         <SelectChip
           label="집"
-          selected={selectedLocation === '집'}
-          onPress={() => setSelectedLocation('집')}
+          selected={selectedLocation === "집"}
+          onPress={() => setSelectedLocation("집")}
         />
         <SelectChip
           label="학교"
-          selected={selectedLocation === '학교'}
-          onPress={() => setSelectedLocation('학교')}
+          selected={selectedLocation === "학교"}
+          onPress={() => setSelectedLocation("학교")}
         />
       </HStack>
 
