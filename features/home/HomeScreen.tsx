@@ -1,6 +1,9 @@
 import React from "react";
-import { useRouter } from "expo-router"; // Import useRouter
-
+import { useRouter } from "expo-router";
+import { Box, Button, ButtonText, HStack, Image } from "@gluestack-ui/themed";
+import KakaoMap from "@/components/KakaoMap";
+import MapControlPanel from "./components/MapControlPanel";
+import Geolocation from "@/components/Geolocation";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -15,20 +18,16 @@ export default function HomeScreen() {
         position="absolute"
         zIndex={10}
         alignSelf="center"
-        top={50}
+        top={60}
         width="95%"
       >
-
         <Box flex={1} mb={15}>
           <MapControlPanel />
-
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>
           <Button
             action="secondary"
             bg="$white"
-            borderWidth={1}
-            borderColor="#e6e6e6"
             rounded="$xl"
             px={10}
             py={10}
@@ -45,14 +44,13 @@ export default function HomeScreen() {
           <Button
             action="secondary"
             bg="$white"
-            borderWidth={1}
-            borderColor="#e6e6e6"
             rounded="$xl"
             px={10}
             py={10}
             shadowColor="#000"
             shadowOpacity={0.05}
             shadowRadius={2}
+            onPress={() => router.push("/(main)/news-page")}
           >
             <HStack alignItems="center" space="xs">
               <ButtonText fontSize={15} color="#333" fontWeight="800">

@@ -19,9 +19,9 @@ const MyPage = () => {
   const buttonWidth = (width - horizontalPadding * 2 - gap) / 2;
 
   return (
-    <Box flex={1} bg="$white">
+    <Box flex={1} bg="$white" pt={60}>
       {/* 헤더 */}
-      <Box pt="$12" px="$4" pb="$4" bg="$white">
+      <Box px="$4" pb="$4" bg="$white">
         <Heading size="2xl" fontWeight="$bold" textAlign="center">
           👤마이페이지
         </Heading>

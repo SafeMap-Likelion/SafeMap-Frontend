@@ -70,7 +70,7 @@ export default function MapControlPanel() {
           <HStack
             flexWrap="wrap"
             justifyContent="space-between"
-            alignItems="center"
+            alignItems="flex-start"
             space="sm"
           >
             {/* 카테고리 영역 */}
@@ -87,8 +87,6 @@ export default function MapControlPanel() {
                   <Pressable key={i} onPress={() => handleCategoryPress(cat)}>
                     <Box
                       bg={isSelected ? "#FFE6E6" : "$white"}
-                      borderWidth={1}
-                      borderColor="#FFE6E6"
                       px={10}
                       py={7}
                       rounded="$2xl"
@@ -108,6 +106,7 @@ export default function MapControlPanel() {
               })}
             </HStack>
 
+            {/* 화살표 - 오른쪽 상단에 위치 */}
             <Pressable onPress={() => setIsExpanded(!isExpanded)}>
               <MaterialIcons
                 name={isExpanded ? "arrow-drop-up" : "arrow-drop-down"}
