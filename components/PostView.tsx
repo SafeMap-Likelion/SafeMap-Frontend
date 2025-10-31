@@ -11,7 +11,6 @@ import {
   Badge,
   BadgeText,
   Icon,
-  ArrowLeftIcon,
   CloseIcon,
   Pressable,
   Image,
@@ -23,6 +22,7 @@ import {
   ModalBody,
   ScrollView,
 } from "@gluestack-ui/themed";
+import { FontAwesome } from "@expo/vector-icons";
 
 //위험도 뱃지 컴포넌트. 사고 종류랑 위험도에 따라 색&글자 바뀜 설정
 function RiskBadge({ category = "⛑️ 시설/인프라", level = "중" }) {
@@ -52,8 +52,11 @@ function HeaderWithBadge() {
 
   return (
     <HStack alignItems="center" justifyContent="space-between">
-      <Pressable onPress={() => router.back()}>
-        <Icon as={ArrowLeftIcon} width={24} height={24} />
+      <Pressable
+        onPress={() => router.back()}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      >
+        <FontAwesome name="chevron-left" size={18} color="#374151" />
       </Pressable>
       <RiskBadge category="⛑️ 시설/인프라" level="중" />
     </HStack>
@@ -219,23 +222,17 @@ function PostContent() {
 //최종 게시물 페이지
 export default function PostPage() {
   return (
-    <Box
-      backgroundColor="$white"
-      borderTopLeftRadius={15}
-      borderTopRightRadius={15}
+    <ScrollView
+      contentContainerStyle={{
+        paddingTop: 20,
+        paddingBottom: 100,
+        paddingHorizontal: 15,
+      }}
     >
-      <ScrollView
-        contentContainerStyle={{
-          paddingTop: 20,
-          paddingBottom: 10,
-          paddingHorizontal: 15,
-        }}
-      >
-        <Box style={{ marginBottom: 18 }}>
-          <HeaderWithBadge />
-        </Box>
-        <PostContent />
-      </ScrollView>
-    </Box>
+      <Box style={{ marginBottom: 18 }}>
+        <HeaderWithBadge />
+      </Box>
+      <PostContent />
+    </ScrollView>
   );
 }
