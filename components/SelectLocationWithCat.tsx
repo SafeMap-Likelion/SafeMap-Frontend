@@ -12,6 +12,7 @@ import {
 } from "@gluestack-ui/themed";
 import { Animated, Easing } from "react-native";
 import debounce from "lodash.debounce";
+import { useSelectLocationStore } from "@/stores/useSelectLocationStore";
 
 export default function SelectLocationWithCat() {
   const [isPressed, setIsPressed] = useState(false);
@@ -19,6 +20,8 @@ export default function SelectLocationWithCat() {
   const [searchText, setSearchText] = useState(""); // 위치 검색 입력필드 값
   const [debouncedSearchText, setDebouncedSearchText] = useState(""); //디바운싱 후 위치 검색 입력필드 값
   const [animatedHeight] = useState(new Animated.Value(200)); // 기본 높이 (Animated)
+
+  const isAuthPage = useSelectLocationStore((state) => state.isAuthPage);
 
   const regions = [
     "서울특별시 종로구 부암동",
@@ -199,23 +202,27 @@ export default function SelectLocationWithCat() {
         </VStack>
 
         {/* 추가 버튼 */}
-        <Button
-          bg={isPressed || isHovered ? "#9e9e9e" : "#bebebe"}
-          onPressIn={() => setIsPressed(true)}
-          onPressOut={() => setIsPressed(false)}
-          onHoverIn={() => setIsHovered(true)}
-          onHoverOut={() => setIsHovered(false)}
-          rounded="$2xl"
-          px={6}
-          py={3}
-          m={0}
-          h="auto"
-          alignSelf="center"
-        >
-          <ButtonText fontSize={12} color="$white" px={8} py={4}>
-            추가하기
-          </ButtonText>
-        </Button>
+        {isAuthPage ? (
+          ""
+        ) : (
+          <Button
+            bg={isPressed || isHovered ? "#9e9e9e" : "#bebebe"}
+            onPressIn={() => setIsPressed(true)}
+            onPressOut={() => setIsPressed(false)}
+            onHoverIn={() => setIsHovered(true)}
+            onHoverOut={() => setIsHovered(false)}
+            rounded="$2xl"
+            px={6}
+            py={3}
+            m={0}
+            h="auto"
+            alignSelf="center"
+          >
+            <ButtonText fontSize={12} color="$white" px={8} py={4}>
+              추가하기
+            </ButtonText>
+          </Button>
+        )}
       </VStack>
     </Animated.View>
   );
