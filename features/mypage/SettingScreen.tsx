@@ -13,8 +13,9 @@ const SettingScreen = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [nickname, setNickname] = useState("사용자123");
   const [snsAccount, setSnsAccount] = useState("example@gmail.com");
-  const [interestCategory, setInterestCategory] = useState("학교");
-  const [interestLocation, setInterestLocation] = useState("서울특별시 관악구 관악로 1");
+  const [interestAreas, setInterestAreas] = useState([
+    { category: "학교", location: "서울특별시 관악구 관악로 1" },
+  ]);
 
   const horizontalPadding = 20;
   const inputWidth = width - horizontalPadding * 2;
@@ -36,24 +37,35 @@ const SettingScreen = () => {
     }
   };
 
-  const handleDeleteInterest = () => {
-    console.log("관심지역 삭제");
-    // TODO: 삭제 로직 구현
+  const handleDeleteInterest = (index: number) => {
+    setInterestAreas((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAddInterest = (category: string, location: string) => {
+    if (category.trim() && location.trim()) {
+      setInterestAreas((prev) => [...prev, { category, location }]);
+    }
   };
 
   const handleLogout = async () => {
     try {
       await signOut();
       // 로그아웃 후 로그인 화면으로 이동
-      router.replace("/");
+      router.replace("/(auth)");
     } catch (error) {
       console.error("로그아웃 실패:", error);
     }
   };
 
-  const handleWithdraw = () => {
-    console.log("회원탈퇴 버튼 클릭");
-    // TODO: 회원탈퇴 기능 구현
+  const handleWithdraw = async () => {
+    try {
+      console.log("회원탈퇴 버튼 클릭");
+      // TODO: 회원탈퇴 API 호출
+      await signOut();
+      router.replace("/(auth)");
+    } catch (error) {
+      console.error("회원탈퇴 실패:", error);
+    }
   };
 
   return (
@@ -110,37 +122,39 @@ const SettingScreen = () => {
             <Text fontSize={18} fontWeight="$bold" mb={5}>
               관심지역
             </Text>
-            <HStack gap={5} alignItems="center">
-              <Box
-                bg="#2FA5FF"
-                w={categoryBoxWidth}
-                h={32}
-                borderRadius={15}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Text color="$white" fontSize={12} fontWeight="$semibold">
-                  {interestCategory}
-                </Text>
-              </Box>
-              <Box
-                bg="#F3F3F3"
-                w={locationBoxWidth}
-                h={32}
-                borderRadius={15}
-                justifyContent="center"
-                alignItems="center"
-              >
-                <Text color="#565656" fontSize={12} fontWeight="$semibold">
-                  {interestLocation}
-                </Text>
-              </Box>
-              {isEditing && (
-                <Pressable onPress={handleDeleteInterest} ml={5}>
-                  <Icon as={CloseIcon} size="md" color="#000000" />
-                </Pressable>
-              )}
-            </HStack>
+            {interestAreas.map((area, index) => (
+              <HStack key={index} gap={5} alignItems="center" mb={10}>
+                <Box
+                  bg="#2FA5FF"
+                  w={categoryBoxWidth}
+                  h={32}
+                  borderRadius={15}
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Text color="$white" fontSize={12} fontWeight="$semibold">
+                    {area.category}
+                  </Text>
+                </Box>
+                <Box
+                  bg="#F3F3F3"
+                  w={locationBoxWidth}
+                  h={32}
+                  borderRadius={15}
+                  justifyContent="center"
+                  alignItems="center"
+                >
+                  <Text color="#565656" fontSize={12} fontWeight="$semibold">
+                    {area.location}
+                  </Text>
+                </Box>
+                {isEditing && (
+                  <Pressable onPress={() => handleDeleteInterest(index)} ml={5}>
+                    <Icon as={CloseIcon} size="md" color="#000000" />
+                  </Pressable>
+                )}
+              </HStack>
+            ))}
 
             {/* 지역 추가 */}
             {isEditing && (
@@ -149,7 +163,7 @@ const SettingScreen = () => {
                   지역 추가
                 </Text>
                 <Box w="100%">
-                  <SelectLocationWithCat />
+                  <SelectLocationWithCat onAdd={handleAddInterest} />
                 </Box>
               </VStack>
             )}

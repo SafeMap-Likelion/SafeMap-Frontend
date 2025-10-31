@@ -1,14 +1,8 @@
 import React, { useState } from "react";
-import {
-  Box,
-  HStack,
-  Heading,
-  Pressable,
-  Text,
-} from "@gluestack-ui/themed";
+import { Box, HStack, Heading, Pressable, Text } from "@gluestack-ui/themed";
 import { useWindowDimensions } from "react-native";
-import MyPostScreen from '@/features/mypage/MyPostScreen';
-import SettingScreen from '@/features/mypage/SettingScreen';
+import MyPostScreen from "@/features/mypage/MyPostScreen";
+import SettingScreen from "@/features/mypage/SettingScreen";
 
 const MyPage = () => {
   const [activeTab, setActiveTab] = useState<"posts" | "settings">("posts");
@@ -38,11 +32,7 @@ const MyPage = () => {
           justifyContent="center"
           alignItems="center"
         >
-          <Text
-            fontSize={16}
-            fontWeight="$bold"
-            color="$white"
-          >
+          <Text fontSize={16} fontWeight="$bold" color="$white">
             내가 알린 사건/사고
           </Text>
         </Pressable>
@@ -56,11 +46,7 @@ const MyPage = () => {
           justifyContent="center"
           alignItems="center"
         >
-          <Text
-            fontSize={16}
-            fontWeight="$bold"
-            color="$white"
-          >
+          <Text fontSize={16} fontWeight="$bold" color="$white">
             설정
           </Text>
         </Pressable>
