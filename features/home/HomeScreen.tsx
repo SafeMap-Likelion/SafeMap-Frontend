@@ -62,6 +62,7 @@ export default function HomeScreen() {
             shadowColor="#000"
             shadowOpacity={0.05}
             shadowRadius={2}
+            onPress={() => router.push("/(main)/news-page")}
           >
             <HStack alignItems="center" space="xs">
               <ButtonText fontSize={15} color="#333" fontWeight="800">
