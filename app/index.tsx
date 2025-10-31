@@ -7,7 +7,7 @@ export default function AppLayout() {
   const { isLoaded, isSignedIn } = useAuth();
 
   if (!isLoaded) {
-    return null; // or a loading spinner
+    return null; // 아무것도 안 보여줌
   }
 
   if (isSignedIn) {
