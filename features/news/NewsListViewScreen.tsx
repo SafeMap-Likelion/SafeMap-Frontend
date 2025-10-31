@@ -1,9 +1,10 @@
 import React from "react";
 import { FlatList } from "react-native";
-import { Box, ScrollView } from "@gluestack-ui/themed";
-import Header from "../../features/news/components/Header";
-import InfoBubble from "../../features/news/components/InfoBubble";
-import NewsCard from "../../features/news/components/NewsCard";
+import { Box, ScrollView, SafeAreaView } from "@gluestack-ui/themed";
+import Header from "./components/Header";
+import InfoBubble from "./components/InfoBubble";
+import NewsCard from "./components/NewsCard";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const dummyData = [
   {
@@ -57,24 +58,27 @@ const dummyData = [
 ];
 
 export default function NewsScreen() {
+  const insets = useSafeAreaInsets();
   return (
-    <Box flex={1} bg="$white" pt={50}>
-      <Header title="'봉천동' 뉴스" />
-      <InfoBubble location="봉천동" />
-      <ScrollView
-        mt={5}
-        mx={5}
-        bg="$white"
-        showsVerticalScrollIndicator={false}
-      >
-        <FlatList
-          data={dummyData}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <NewsCard item={item} />}
-          scrollEnabled={false}
-          contentContainerStyle={{ paddingBottom: 80 }}
-        />
-      </ScrollView>
-    </Box>
+    <SafeAreaView style={{ flex: 1 }}>
+      <Box flex={1} bg="$white" pt={insets.top}>
+        <Header title="'봉천동' 뉴스" />
+        <InfoBubble location="봉천동" />
+        <ScrollView
+          mt={5}
+          mx={5}
+          bg="$white"
+          showsVerticalScrollIndicator={false}
+        >
+          <FlatList
+            data={dummyData}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => <NewsCard item={item} />}
+            scrollEnabled={false}
+            contentContainerStyle={{ paddingBottom: 80 }}
+          />
+        </ScrollView>
+      </Box>
+    </SafeAreaView>
   );
 }

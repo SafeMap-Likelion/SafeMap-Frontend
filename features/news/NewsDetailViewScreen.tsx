@@ -26,7 +26,7 @@ export default function NewsDetailViewScreen() {
   };
 
   return (
-    <Box flex={1} bg="$white" pt={50}>
+    <Box flex={1} bg="$white">
       <Header title="'봉천동' 뉴스" />
       <InfoBubble location="봉천동" />
 
