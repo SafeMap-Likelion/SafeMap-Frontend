@@ -1,6 +1,6 @@
 //개별 사건 게시물 상세 화면
-import React from 'react';
-import PostView from '../../components/PostView';
+import React from "react";
+import PostView from "../../components/PostView";
 import {
   Box,
   HStack,
@@ -8,8 +8,8 @@ import {
   Button,
   ButtonText,
   Image,
-} from '@gluestack-ui/themed';
-import { useRouter } from 'expo-router';
+} from "@gluestack-ui/themed";
+import { useRouter } from "expo-router";
 
 /**
  * 개별 사건 게시물 상세 화면입니다.
@@ -27,7 +27,9 @@ export default function PostDetailViewScreen() {
         justifyContent="space-between"
         alignItems="center"
       >
-        <Text fontSize={40} fontWeight="bold" color="black">집주변</Text>
+        <Text fontSize={40} fontWeight="bold" color="black">
+          집주변
+        </Text>
         <Button
           action="secondary"
           bg="#F3F3F3"
