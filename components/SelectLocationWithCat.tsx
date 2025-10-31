@@ -12,12 +12,21 @@ import {
   InputSlot,
   InputIcon,
   SearchIcon,
+  Pressable,
 } from "@gluestack-ui/themed";
 import * as Font from "expo-font";
 
-export default function SelectLocationWithCat() {
+type SelectLocationWithCatProps = {
+  onAdd?: (category: string, location: string) => void;
+};
+
+export default function SelectLocationWithCat({
+  onAdd,
+}: SelectLocationWithCatProps) {
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [category, setCategory] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
   const regions = [
     "서울특별시 종로구 부암동",
     "서울특별시 종로구 평창동",
@@ -34,14 +43,7 @@ export default function SelectLocationWithCat() {
   ];
 
   return (
-    <Box
-      flex={1}
-      bg="#f3f3f3"
-      py={15}
-      px={30}
-      rounded="$2xl"
-      w="100%"
-    >
+    <Box flex={1} bg="#f3f3f3" py={15} px={30} rounded="$2xl" w="100%">
       <VStack flex={1}>
         <HStack alignItems="center" mb={15}>
           <Text
@@ -70,6 +72,8 @@ export default function SelectLocationWithCat() {
               fontWeight={500}
               placeholder="회사"
               color="#565656"
+              value={category}
+              onChangeText={setCategory}
             />
           </Input>
         </HStack>
@@ -101,6 +105,8 @@ export default function SelectLocationWithCat() {
                 fontWeight={500}
                 placeholder="서울특별시"
                 color="#565656"
+                value={selectedLocation}
+                onChangeText={setSelectedLocation}
               />
             </Input>
           </HStack>
@@ -117,17 +123,18 @@ export default function SelectLocationWithCat() {
               <ScrollView py={5}>
                 <VStack space="xs">
                   {regions.map((r, i) => (
-                    <Text
-                      textAlign="center"
-                      fontFamily="Pretendard"
-                      key={i}
-                      fontSize={12}
-                      fontWeight={500}
-                      color="#565656"
-                      py={2.5}
-                    >
-                      {r}
-                    </Text>
+                    <Pressable key={i} onPress={() => setSelectedLocation(r)}>
+                      <Text
+                        textAlign="center"
+                        fontFamily="Pretendard"
+                        fontSize={12}
+                        fontWeight={500}
+                        color="#565656"
+                        py={2.5}
+                      >
+                        {r}
+                      </Text>
+                    </Pressable>
                   ))}
                 </VStack>
               </ScrollView>
@@ -141,6 +148,13 @@ export default function SelectLocationWithCat() {
           onPressOut={() => setIsPressed(false)}
           onHoverIn={() => setIsHovered(true)}
           onHoverOut={() => setIsHovered(false)}
+          onPress={() => {
+            if (onAdd && category.trim() && selectedLocation.trim()) {
+              onAdd(category, selectedLocation);
+              setCategory("");
+              setSelectedLocation("");
+            }
+          }}
           rounded="$2xl"
           px={6}
           py={3}
