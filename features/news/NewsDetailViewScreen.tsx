@@ -1,14 +1,23 @@
 import React from "react";
 import { ScrollView } from "@gluestack-ui/themed";
-import { Box, VStack, HStack, Text, Pressable } from "@gluestack-ui/themed";
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Pressable,
+  SafeAreaView,
+} from "@gluestack-ui/themed";
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import InfoBubble from "./components/InfoBubble";
 import Header from "./components/Header";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NewsDetailViewScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const insets = useSafeAreaInsets();
 
   const newsData = {
     title: "관악구 봉천동 현대시장 인근 '안심가로등' 확대…주민 밤길 밝힌다",
@@ -26,52 +35,54 @@ export default function NewsDetailViewScreen() {
   };
 
   return (
-    <Box flex={1} bg="$white">
-      <Header title="'봉천동' 뉴스" />
-      <InfoBubble location="봉천동" />
+    <SafeAreaView style={{ flex: 1 }}>
+      <Box flex={1} bg="$white" pt={insets.top}>
+        <Header title="'봉천동' 뉴스" />
+        <InfoBubble location="봉천동" />
 
-      {/* 스크롤 가능한 컨텐츠 */}
-      <ScrollView mt={5} showsVerticalScrollIndicator={false}>
-        <VStack px="$4" py="$4" space="md">
-          {/* 메타 정보 */}
-          <VStack space="xs">
-            <Text fontFamily="Pretendard" fontSize={12} color="$textDark600">
-              헤럴드경제
-            </Text>
+        {/* 스크롤 가능한 컨텐츠 */}
+        <ScrollView mt={5} showsVerticalScrollIndicator={false}>
+          <VStack px="$4" py="$4" space="md">
+            {/* 메타 정보 */}
+            <VStack space="xs">
+              <Text fontFamily="Pretendard" fontSize={12} color="$textDark600">
+                헤럴드경제
+              </Text>
 
-            {/* 제목 */}
-            <Text
-              fontFamily="Pretendard"
-              fontSize={20}
-              fontWeight="$bold"
-              color="#000000"
-              lineHeight={28}
-            >
-              {newsData.title}
-            </Text>
+              {/* 제목 */}
+              <Text
+                fontFamily="Pretendard"
+                fontSize={20}
+                fontWeight="$bold"
+                color="#000000"
+                lineHeight={28}
+              >
+                {newsData.title}
+              </Text>
 
-            {/* 날짜 */}
-            <Text fontFamily="Pretendard" fontSize={12} color="$textDark600">
-              {newsData.date}
-            </Text>
+              {/* 날짜 */}
+              <Text fontFamily="Pretendard" fontSize={12} color="$textDark600">
+                {newsData.date}
+              </Text>
+            </VStack>
+
+            {/* 본문 내용 */}
+            <Box mt="$4">
+              <Text
+                fontFamily="Pretendard"
+                fontSize={14}
+                color="#000000"
+                lineHeight={22}
+              >
+                {newsData.content}
+              </Text>
+            </Box>
           </VStack>
 
-          {/* 본문 내용 */}
-          <Box mt="$4">
-            <Text
-              fontFamily="Pretendard"
-              fontSize={14}
-              color="#000000"
-              lineHeight={22}
-            >
-              {newsData.content}
-            </Text>
-          </Box>
-        </VStack>
-
-        {/* 하단 여백 (네비게이션 바를 위한) */}
-        <Box height={100} />
-      </ScrollView>
-    </Box>
+          {/* 하단 여백 (네비게이션 바를 위한) */}
+          <Box height={100} />
+        </ScrollView>
+      </Box>
+    </SafeAreaView>
   );
 }
