@@ -9,8 +9,8 @@ const navItems = [
     href: "/(main)/",
     path: "/",
     iconSet: FontAwesome,
-    iconName: "home",
-    label: "홈",
+    iconName: "map-marker",
+    label: "지도",
   },
   {
     href: "/(main)/event-alarm-page",

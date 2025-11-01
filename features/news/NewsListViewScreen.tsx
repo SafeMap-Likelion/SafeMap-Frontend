@@ -4,7 +4,6 @@ import { Box, ScrollView, SafeAreaView } from "@gluestack-ui/themed";
 import Header from "./components/Header";
 import InfoBubble from "./components/InfoBubble";
 import NewsCard from "./components/NewsCard";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const dummyData = [
   {
@@ -58,10 +57,9 @@ const dummyData = [
 ];
 
 export default function NewsScreen() {
-  const insets = useSafeAreaInsets();
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Box flex={1} bg="$white" pt={insets.top}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <Box flex={1} bg="$white">
         <Header title="'봉천동' 뉴스" />
         <InfoBubble location="봉천동" />
         <ScrollView

@@ -3,6 +3,14 @@ import { Box, VStack, HStack, Text, Pressable } from "@gluestack-ui/themed";
 import { MaterialIcons } from "@expo/vector-icons";
 import { MapPin, Search } from "lucide-react-native";
 import SelectLocation from "@/components/SelectLocation";
+import { LayoutAnimation, Platform, UIManager, ScrollView } from "react-native";
+
+// Android에서 LayoutAnimation 활성화
+if (Platform.OS === "android") {
+  if (UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+  }
+}
 
 export default function MapControlPanel() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -17,6 +25,12 @@ export default function MapControlPanel() {
     "⚙️ 기타/특수",
   ];
 
+  // 토글 애니메이션
+  const toggleExpanded = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsExpanded(!isExpanded);
+  };
+
   // 카테고리 선택 / 해제
   const handleCategoryPress = (category: string) => {
     setSelectedCategories((prev) =>
@@ -26,15 +40,8 @@ export default function MapControlPanel() {
     );
   };
 
-  //  닫혔을 때: 선택된 것만 보이기
-  const visibleCategories = isExpanded
-    ? categories
-    : selectedCategories.length > 0
-      ? selectedCategories
-      : [];
-
-  //선택된 게 없을 때: 박스 배경 + 화살표만 표시
-  const isEmpty = selectedCategories.length === 0 && !isExpanded;
+  //  펼쳤을 때는 전체, 닫혔을 때도 전체 (스크롤로)
+  const visibleCategories = categories;
 
   return (
     <Box
@@ -60,7 +67,7 @@ export default function MapControlPanel() {
 
         {/* 카테고리 선택 영역 */}
         <Box
-          bg={isExpanded ? "#f3f3f3" : "$white"}
+          bg="#f3f3f3"
           rounded="$2xl"
           p="$3"
           width="90%"
@@ -68,46 +75,83 @@ export default function MapControlPanel() {
           mt={isExpanded ? 0 : -15}
         >
           <HStack
-            flexWrap="wrap"
             justifyContent="space-between"
             alignItems="flex-start"
             space="sm"
           >
-            {/* 카테고리 영역 */}
-            <HStack
-              flexWrap="wrap"
-              space="sm"
-              justifyContent={isEmpty ? "center" : "flex-start"}
-              alignItems="center"
-              flex={1}
-            >
-              {visibleCategories.map((cat, i) => {
-                const isSelected = selectedCategories.includes(cat);
-                return (
-                  <Pressable key={i} onPress={() => handleCategoryPress(cat)}>
-                    <Box
-                      bg={isSelected ? "#FFE6E6" : "$white"}
-                      px={10}
-                      py={7}
-                      rounded="$2xl"
-                      mb={5}
-                    >
-                      <Text
-                        fontSize={12}
-                        fontWeight="600"
-                        color="#555"
-                        textAlign="center"
+            {/* 카테고리 영역 - 닫혔을 때 가로 스크롤, 펼쳤을 때 여러 줄 */}
+            {!isExpanded ? (
+              // 닫혔을 때: 가로 스크롤
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  alignItems: "center",
+                  paddingRight: 10,
+                }}
+                style={{ flex: 1 }}
+              >
+                <HStack space="sm" alignItems="center">
+                  {visibleCategories.map((cat, i) => {
+                    const isSelected = selectedCategories.includes(cat);
+                    return (
+                      <Pressable key={i} onPress={() => handleCategoryPress(cat)}>
+                        <Box
+                          bg={isSelected ? "#FFE6E6" : "$white"}
+                          px={10}
+                          py={7}
+                          rounded="$2xl"
+                        >
+                          <Text
+                            fontSize={12}
+                            fontWeight="600"
+                            color="#555"
+                            textAlign="center"
+                          >
+                            {cat}
+                          </Text>
+                        </Box>
+                      </Pressable>
+                    );
+                  })}
+                </HStack>
+              </ScrollView>
+            ) : (
+              // 펼쳤을 때: 여러 줄로 표시
+              <HStack
+                flexWrap="wrap"
+                space="sm"
+                alignItems="center"
+                flex={1}
+              >
+                {visibleCategories.map((cat, i) => {
+                  const isSelected = selectedCategories.includes(cat);
+                  return (
+                    <Pressable key={i} onPress={() => handleCategoryPress(cat)}>
+                      <Box
+                        bg={isSelected ? "#FFE6E6" : "$white"}
+                        px={10}
+                        py={7}
+                        rounded="$2xl"
+                        mb={5}
                       >
-                        {cat}
-                      </Text>
-                    </Box>
-                  </Pressable>
-                );
-              })}
-            </HStack>
+                        <Text
+                          fontSize={12}
+                          fontWeight="600"
+                          color="#555"
+                          textAlign="center"
+                        >
+                          {cat}
+                        </Text>
+                      </Box>
+                    </Pressable>
+                  );
+                })}
+              </HStack>
+            )}
 
             {/* 화살표 - 오른쪽 상단에 위치 */}
-            <Pressable onPress={() => setIsExpanded(!isExpanded)}>
+            <Pressable onPress={toggleExpanded}>
               <MaterialIcons
                 name={isExpanded ? "arrow-drop-up" : "arrow-drop-down"}
                 size={30}
