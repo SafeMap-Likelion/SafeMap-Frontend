@@ -56,7 +56,7 @@ export default function SelectLocation({
       width="100%"
       bg={containerBg}
       py={10}
-      px={30}
+      px={15}
       rounded="$2xl"
       alignSelf="center"
     >

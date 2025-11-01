@@ -7,18 +7,21 @@ import React from "react";
 const navItems = [
   {
     href: "/(main)/",
+    path: "/",
     iconSet: FontAwesome,
-    iconName: "home",
-    label: "홈",
+    iconName: "map-marker",
+    label: "지도",
   },
   {
     href: "/(main)/event-alarm-page",
+    path: "/event-alarm-page",
     iconSet: FontAwesome,
     iconName: "plus-square",
     label: "사건/사고 알리기",
   },
   {
     href: "/(main)/mypage",
+    path: "/mypage",
     iconSet: FontAwesome,
     iconName: "user",
     label: "마이페이지",
@@ -42,7 +45,7 @@ const BottomNavBar = () => {
     >
       <HStack justifyContent="space-around" alignItems="center" height={60}>
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname === item.path;
 
           return (
             <Link href={item.href as any} asChild key={item.href}>
@@ -51,11 +54,11 @@ const BottomNavBar = () => {
                   <FontAwesome
                     name={item.iconName as any}
                     size={24}
-                    color={isActive ? "#3897DF" : "#9ca3af"}
+                    color={isActive ? "#1C9DFF" : "#9ca3af"}
                   />
                   <Text
                     size="xs"
-                    color={isActive ? "#3897DF" : "#9ca3af"}
+                    color={isActive ? "#1C9DFF" : "#9ca3af"}
                     fontWeight={isActive ? "$bold" : "$normal"}
                   >
                     {item.label}

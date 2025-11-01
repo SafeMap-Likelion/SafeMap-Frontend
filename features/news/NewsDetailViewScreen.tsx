@@ -12,12 +12,10 @@ import { FontAwesome } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import InfoBubble from "./components/InfoBubble";
 import Header from "./components/Header";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function NewsDetailViewScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const insets = useSafeAreaInsets();
 
   const newsData = {
     title: "관악구 봉천동 현대시장 인근 '안심가로등' 확대…주민 밤길 밝힌다",
@@ -35,8 +33,8 @@ export default function NewsDetailViewScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1 }}>
-      <Box flex={1} bg="$white" pt={insets.top}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <Box flex={1} bg="$white">
         <Header title="'봉천동' 뉴스" />
         <InfoBubble location="봉천동" />
 

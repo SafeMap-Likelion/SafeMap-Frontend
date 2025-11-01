@@ -14,7 +14,13 @@ import { Animated, Easing } from "react-native";
 import debounce from "lodash.debounce";
 import { useSelectLocationStore } from "@/stores/useSelectLocationStore";
 
-export default function SelectLocationWithCat() {
+type SelectLocationWithCatProps = {
+  onAdd?: (category: string, location: string) => void;
+};
+
+export default function SelectLocationWithCat({
+  onAdd,
+}: SelectLocationWithCatProps) {
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [regionCategory, setRegionCategory] = useState(""); // 위치 선택지 값
