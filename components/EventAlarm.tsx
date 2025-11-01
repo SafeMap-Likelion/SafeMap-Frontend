@@ -23,12 +23,12 @@ import MapWrapper from "./MapWrapper";
 //타입/상수
 const DangerLevel = ["낮음", "중간", "높음"];
 const CATEGORIES = [
-  "🚦 교통",
+  "🚗 교통",
   "🌪️ 자연 재해",
-  "🧍 치안/폭력",
-  "⛑️ 시설/인프라",
-  "🖥️ 장애/오류",
-  "📌 기타/특수",
+  "🔥 화재/폭발",
+  "🏗️ 시설/인프라",
+  "🚓 범죄/치안",
+  "⚙️ 기타/특수",
 ];
 
 // 정적 지도 대체 이미지
@@ -74,7 +74,7 @@ function SelectChip({
 export default function EventAlarm() {
   const router = useRouter();
 
-  const [category, setCategory] = useState<string>("⛑️ 시설/인프라");
+  const [category, setCategory] = useState<string>("🏗️ 시설/인프라");
   const [level, setLevel] = useState<string>("중간");
   const [address, setAddress] = useState<string>("");
   const [title, setTitle] = useState<string>("");
