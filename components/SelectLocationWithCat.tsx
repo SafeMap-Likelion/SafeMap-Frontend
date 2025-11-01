@@ -17,6 +17,8 @@ import { useSelectLocationStore } from "@/stores/useSelectLocationStore";
 export default function SelectLocationWithCat() {
   const [isPressed, setIsPressed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [regionCategory, setRegionCategory] = useState(""); // 위치 선택지 값
+  const [selectedRegion, setSelectedRegion] = useState(""); // 사용자가 선택한 위치 선택지 값
   const [searchText, setSearchText] = useState(""); // 위치 검색 입력필드 값
   const [debouncedSearchText, setDebouncedSearchText] = useState(""); //디바운싱 후 위치 검색 입력필드 값
   const [animatedHeight] = useState(new Animated.Value(200)); // 기본 높이 (Animated)
@@ -75,6 +77,17 @@ export default function SelectLocationWithCat() {
       useNativeDriver: false,
     }).start();
   }, [targetHeight]);
+
+  // ScrollView에서 위치 선택지 선택 시 검색어 입력+선택 완료 처리
+  const handleSelectRegion = (region: string) => {
+    setSearchText(region); // 입력창에 자동 입력
+    setSelectedRegion(region); // 선택 상태 저장
+    setDebouncedSearchText(region); // 디바운스된 값도 갱신 (스크롤뷰 닫히도록)
+  };
+
+  //“Safety map 시작하기” 버튼 노출 조건
+  const canShowSafetyButton =
+    regionCategory.trim().length > 0 && selectedRegion.trim().length > 0;
 
   return (
     <Animated.View
@@ -149,11 +162,12 @@ export default function SelectLocationWithCat() {
                 placeholder="추가하려는 지역을 입력하세요"
                 color="#565656"
                 value={searchText}
-                onChangeText={setSearchText} // 🔹 입력값 상태 업데이트
+                onChangeText={setSearchText} // ㅇ입력값 상태 업데이트
               />
             </Input>
           </HStack>
 
+          {/* 검색 결과 리스트 */}
           {/*  검색어가 있을 때만 ScrollView 보이기 */}
           {debouncedSearchText !== "" && (
             <HStack maxHeight={113}>
@@ -176,7 +190,8 @@ export default function SelectLocationWithCat() {
                           key={i}
                           fontSize={12}
                           fontWeight={500}
-                          color="#565656"
+                          color={selectedRegion === r ? "#1E90FF" : "#565656"}
+                          onPress={() => handleSelectRegion(r)} // 클릭 시 입력창에 반영
                           py={2.5}
                         >
                           {r}
@@ -201,9 +216,24 @@ export default function SelectLocationWithCat() {
           )}
         </VStack>
 
-        {/* 추가 버튼 */}
+        {/*버튼 */}
         {isAuthPage ? (
-          ""
+          canShowSafetyButton && (
+            <Button
+              bg="#1E90FF"
+              rounded="$full"
+              alignSelf="center"
+              px={45}
+              py={8}
+              onPress={() => {
+                console.log("Safety map 시작하기 클릭됨");
+              }}
+            >
+              <ButtonText fontSize={15} color="#fff" textAlign="center">
+                Safety map 시작하기
+              </ButtonText>
+            </Button>
+          )
         ) : (
           <Button
             bg={isPressed || isHovered ? "#9e9e9e" : "#bebebe"}
