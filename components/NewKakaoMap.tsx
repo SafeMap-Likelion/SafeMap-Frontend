@@ -1,20 +1,29 @@
-import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import { View, StyleSheet } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { KAKAO_MAP_JS_KEY } from 'react-native-dotenv';
 
 type KakaoMapProps = {
   latitude: number;
   longitude: number;
 };
 
-export default function NewKakaoMap({ latitude, longitude }: KakaoMapProps) {
+const NewKakaoMap = forwardRef(({ latitude, longitude }: KakaoMapProps, ref) => {
+  const webViewRef = useRef<WebView>(null);
+
+  useImperativeHandle(ref, () => ({
+    recenter: (lat: number, lon: number) => {
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(JSON.stringify({ type: 'recenter', payload: { lat, lon } }));
+      }
+    },
+  }));
+
   const htmlContent = `
     <!DOCTYPE html>
     <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_MAP_JS_KEY}&libraries=services"></script>
+        <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.EXPO_PUBLIC_KAKAO_MAP_JS_KEY}&libraries=services"></script>
         <style>
           body { margin: 0; padding: 0; height: 100%; }
           html { height: 100%; }
@@ -24,6 +33,7 @@ export default function NewKakaoMap({ latitude, longitude }: KakaoMapProps) {
       <body>
         <div id="map"></div>
         <script>
+          let map;
           window.onload = function() {
             console.log('Kakao Map API Loaded');
             if (typeof kakao !== 'undefined' && kakao.maps) {
@@ -33,9 +43,8 @@ export default function NewKakaoMap({ latitude, longitude }: KakaoMapProps) {
                 center: new kakao.maps.LatLng(${latitude}, ${longitude}),
                 level: 3
               };
-              const map = new kakao.maps.Map(mapContainer, mapOption);
+              map = new kakao.maps.Map(mapContainer, mapOption);
 
-              // 마커 추가 (선택 사항)
               const markerPosition = new kakao.maps.LatLng(${latitude}, ${longitude});
               const marker = new kakao.maps.Marker({
                 position: markerPosition
@@ -45,16 +54,34 @@ export default function NewKakaoMap({ latitude, longitude }: KakaoMapProps) {
               console.error('Kakao Maps is not available');
             }
           };
+
+          // Event listener for messages from React Native
+          document.addEventListener('message', function(event) {
+            try {
+              const message = JSON.parse(event.data);
+              if (message.type === 'recenter' && map) {
+                const { lat, lon } = message.payload;
+                const moveLatLon = new kakao.maps.LatLng(lat, lon);
+                map.setCenter(moveLatLon);
+              }
+            } catch (e) {
+              console.error('Error parsing message:', e);
+            }
+          });
+
+          // 기존의 console.log를 webview로 전달하는 코드
+          window.console.log = function(message) {
+            window.ReactNativeWebView.postMessage(message);
+          }
         </script>
       </body>
     </html>
   `;
 
-  console.log(KAKAO_MAP_JS_KEY);
-
   return (
     <View style={styles.container}>
       <WebView
+        ref={webViewRef}
         originWhitelist={['*']}
         source={{ html: htmlContent }}
         style={styles.webview}
@@ -62,26 +89,22 @@ export default function NewKakaoMap({ latitude, longitude }: KakaoMapProps) {
         domStorageEnabled={true}
         onLoad={() => console.log('WebView loaded successfully')}
         onError={(e) => console.error('WebView error: ', e.nativeEvent)}
-        injectedJavaScript={`(function() {
-          window.console.log = function(message) {
-            window.ReactNativeWebView.postMessage(message);
-          }
-        })();`}
-        onMessage={(event) => console.log(event.nativeEvent.data)}
+        onMessage={(event) => {
+          // Messages from WebView's console.log
+          console.log(event.nativeEvent.data);
+        }}
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
-    width: 300,
-    height: 300,
-    marginTop: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
+    flex: 1,
   },
   webview: {
     flex: 1,
   },
 });
+
+export default NewKakaoMap;
