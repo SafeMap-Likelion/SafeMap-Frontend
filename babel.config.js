@@ -19,6 +19,13 @@ module.exports = function (api) {
           },
         },
       ],
+      [
+        'module:react-native-dotenv',
+        {
+          moduleName: 'react-native-dotenv',
+          path: '.env',
+        },
+      ],
       "react-native-reanimated/plugin", // 반드시 마지막
     ],
   };
