@@ -28,12 +28,27 @@ const NewKakaoMap = forwardRef(({ latitude, longitude }: KakaoMapProps, ref) => 
           body { margin: 0; padding: 0; height: 100%; }
           html { height: 100%; }
           #map { width: 100%; height: 100%; }
+          .custom-overlay {
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 5px red;
+            animation: blink 1s infinite;
+          }
+          @keyframes blink {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+          }
         </style>
       </head>
       <body>
         <div id="map"></div>
         <script>
           let map;
+          let customOverlay;
           window.onload = function() {
             console.log('Kakao Map API Loaded');
             if (typeof kakao !== 'undefined' && kakao.maps) {
@@ -45,11 +60,17 @@ const NewKakaoMap = forwardRef(({ latitude, longitude }: KakaoMapProps, ref) => 
               };
               map = new kakao.maps.Map(mapContainer, mapOption);
 
-              const markerPosition = new kakao.maps.LatLng(${latitude}, ${longitude});
-              const marker = new kakao.maps.Marker({
-                position: markerPosition
+              const position = new kakao.maps.LatLng(${latitude}, ${longitude});
+
+              customOverlay = new kakao.maps.CustomOverlay({
+                  position: position,
+                  content: '<div class="custom-overlay"></div>',
+                  xAnchor: 0.5,
+                  yAnchor: 0.5
               });
-              marker.setMap(map);
+
+              customOverlay.setMap(map);
+
             } else {
               console.error('Kakao Maps is not available');
             }
@@ -63,16 +84,14 @@ const NewKakaoMap = forwardRef(({ latitude, longitude }: KakaoMapProps, ref) => 
                 const { lat, lon } = message.payload;
                 const moveLatLon = new kakao.maps.LatLng(lat, lon);
                 map.setCenter(moveLatLon);
+                if (customOverlay) {
+                  customOverlay.setPosition(moveLatLon);
+                }
               }
             } catch (e) {
               console.error('Error parsing message:', e);
             }
           });
-
-          // 기존의 console.log를 webview로 전달하는 코드
-          window.console.log = function(message) {
-            window.ReactNativeWebView.postMessage(message);
-          }
         </script>
       </body>
     </html>

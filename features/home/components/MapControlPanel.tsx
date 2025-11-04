@@ -12,7 +12,7 @@ if (Platform.OS === "android") {
   }
 }
 
-export default function MapControlPanel() {
+export default function MapControlPanel({ address }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
@@ -60,6 +60,7 @@ export default function MapControlPanel() {
           listBg="#F3F3F3"
           leftIcon={MapPin}
           rightIcon={Search}
+          placeholder={address || "지역 검색..."}
           showLeftIcon
           showRightIcon
           showListOnInput

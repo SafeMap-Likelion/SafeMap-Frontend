@@ -4,6 +4,12 @@ module.exports = function (api) {
     presets: ["babel-preset-expo"],
     plugins: [
       [
+        "module:react-native-dotenv",
+        {
+          env: ["EXPO_PUBLIC_KAKAO_REST_API_KEY", "EXPO_PUBLIC_KAKAO_MAP_JS_KEY"],
+        },
+      ],
+      [
         "module-resolver",
         {
           root: ["./"],
