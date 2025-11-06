@@ -1,0 +1,44 @@
+[
+  {
+    "news_id": "550e8400-e29b-41d4-a716-446655440000",
+    "press": "헤럴드경제",
+    "title": "관악구 봉천동 현대시장 인근 '안심가로등' 확대…주민 밤길 밝힌다",
+    "photo": "dog.jpg",
+    "uploaded_at": "2025-09-07T14:30:45Z"
+  },
+  {
+    "news_id": "b5c2f8a1-7d3e-4c9b-8f2a-9e1d6c5b4a3f",
+    "press": "뉴스1",
+    "title": "서울 관악구, 봉천동 골목길 CCTV 설치 완료",
+    "photo": "kitten.jpg",
+    "uploaded_at": "2025-08-17T14:30:45Z"
+  },
+  {
+    "news_id": "c7d9e1f3-2a4b-5c6d-7e8f-9a0b1c2d3e4f",
+    "source": "연합뉴스",
+    "title": "봉천동 주민센터, 야간 순찰 강화 추진",
+    "photo": "llama.jpg",
+    "uploaded_at": "2025-07-27T17:53:00Z"
+  },
+  {
+    "news_id": "d4e5f6a7-b8c9-0d1e-2f3a-4b5c6d7e8f9a",
+    "press": "서울신문",
+    "title": "봉천동 범죄 예방 캠페인 개최",
+    "photo": "dog.jpg",
+    "uploaded_at": "2025-10-15T09:20:30Z"
+  },
+  {
+    "news_id": "e1f2a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b",
+    "press": "동아일보",
+    "title": "봉천동 골목 정비 사업 추진",
+    "photo": "kitten.jpg",
+    "uploaded_at": "2025-11-05T11:45:00Z"
+  },
+  {
+    "news_id": "f7e8d9c0-b1a2-3c4d-5e6f-7a8b9c0d1e2f",
+    "press": "조선일보",
+    "title": "봉천동 주민 위한 공원 조성 계획 발표",
+    "photo": "llama.jpg",
+    "uploaded_at": "2025-02-12T13:15:30Z"
+  }
+]
