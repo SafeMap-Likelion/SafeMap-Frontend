@@ -1,0 +1,44 @@
+[
+  {
+    "latitude": "37.4823",
+    "longitude": "126.9521",
+    "type": "교통",
+    "level": 2,
+    "report_id": "9a4f5e7b-1d45-4c6d-b0f8-5c5239d71da1"
+  },
+  {
+    "latitude": "37.4831",
+    "longitude": "126.9499",
+    "type": "범죄/치안",
+    "level": 3,
+    "report_id": "b19b3ac0-32a0-47d9-99c4-7e5a41df90e4"
+  },
+  {
+    "latitude": "37.4814",
+    "longitude": "126.9542",
+    "type": "시설/인프라",
+    "level": 1,
+    "report_id": "c8e13cd7-37b2-4efa-a4fb-b65116b6e2bd"
+  },
+  {
+    "latitude": "37.4798",
+    "longitude": "126.9570",
+    "type": "화재/폭발",
+    "level": 2,
+    "report_id": "e0d13f2d-675b-4f33-beb6-227acfad0830"
+  },
+  {
+    "latitude": "37.4840",
+    "longitude": "126.9468",
+    "type": "자연 재해",
+    "level": 1,
+    "report_id": "d74ca260-280d-44aa-b9f6-850d402ff41e"
+  },
+  {
+    "latitude": "37.4807",
+    "longitude": "126.9515",
+    "type": "기타/특수",
+    "level": 3,
+    "report_id": "f8c1b0d3-0bb4-4f6c-ae0f-7cd7cc42c9fa"
+  }
+]
