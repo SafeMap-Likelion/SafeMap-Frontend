@@ -1,7 +1,7 @@
 {
-  "id": "1",
-  "latitude": "37.4821",
-  "longitude": "126.9523",
+  "id": 1,
+  "latitude": 37.4821,
+  "longitude": 126.9523,
   "type": "교통",
   "level": 2,
   "title": "횡단보도에서 차량 충돌 발생",
