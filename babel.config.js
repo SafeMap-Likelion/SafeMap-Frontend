@@ -19,7 +19,6 @@ module.exports = function (api) {
           },
         },
       ],
-      "inline-dotenv",
       "react-native-reanimated/plugin", // 반드시 마지막
     ],
   };
