@@ -1,19 +1,46 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "expo-router";
-import { Box, Button, ButtonText, HStack, Image } from "@gluestack-ui/themed";
+import {
+  Box,
+  Button,
+  ButtonText,
+  HStack,
+  Image,
+  Pressable,
+} from "@gluestack-ui/themed";
 import KakaoMap from "@/components/KakaoMap";
 import MapControlPanel from "./components/MapControlPanel";
 import Geolocation from "@/components/Geolocation";
+import { getReportDetail } from "@/api/apis";
+import PostDetailViewScreen from "@/features/post/PostDetailViewScreen";
+import { ReportDetail } from "@/api/types";
 
 export default function HomeScreen() {
   const router = useRouter();
+  const [dongName, setDongName] = useState("");
+  const [isDetailVisible, setDetailVisible] = useState(false);
+  const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
+
+  const handleCenterChange = (newDong: string) => {
+    setDongName(newDong);
+  };
+
+  const handleMarkerPress = async () => {
+    try {
+      const detail = await getReportDetail("1"); // 더미 ID
+      setReportDetail(detail);
+      setDetailVisible(true);
+    } catch (e) {
+      console.error("report detail fetch error", e);
+    }
+  };
 
   return (
     <Box flex={1} position="relative">
-      {/*지도 (바닥 레이어) */}
-      <KakaoMap />
+      {/* 지도 */}
+      <KakaoMap onCenterChange={handleCenterChange} />
 
-      {/* 지도 위에 떠 있는 패널*/}
+      {/* 지도 위 패널 */}
       <Box
         position="absolute"
         zIndex={10}
@@ -22,7 +49,7 @@ export default function HomeScreen() {
         width="95%"
       >
         <Box flex={1} mb={15}>
-          <MapControlPanel />
+          <MapControlPanel dongName={dongName} />
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>
           <Button
@@ -54,7 +81,7 @@ export default function HomeScreen() {
           >
             <HStack alignItems="center" space="xs">
               <ButtonText fontSize={15} color="#333" fontWeight="800">
-                '봉천동' 뉴스 보러가기
+                "{dongName}" 뉴스 보러가기
               </ButtonText>
               <Image
                 source={require("@/assets/images/icon3.png")}
@@ -65,7 +92,30 @@ export default function HomeScreen() {
         </HStack>
       </Box>
 
-      {/* ③ Geolocation (필요 시 다른 위치에 오버레이) */}
+      {/* ✅ 중앙 좌측 마커 */}
+      <Pressable
+        onPress={handleMarkerPress}
+        position="absolute"
+        top="45%"
+        left="25%"
+        zIndex={20}
+      >
+        <Image
+          source={require("@/assets/images/orangeMarker.png")}
+          style={{ width: 40, height: 40 }}
+          alt="marker"
+        />
+      </Pressable>
+
+      {/* ✅ 상세 뷰 (슬라이드 업) */}
+      {isDetailVisible && reportDetail && (
+        <PostDetailViewScreen
+          reportDetail={reportDetail}
+          onClose={() => setDetailVisible(false)}
+        />
+      )}
+
+      {/* 현재 위치 버튼 */}
       <Box position="absolute" bottom={40} right={20} zIndex={10}>
         <Geolocation />
       </Box>

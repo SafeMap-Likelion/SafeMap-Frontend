@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -11,6 +11,7 @@ import {
 } from "@gluestack-ui/themed";
 
 interface SelectLocationProps {
+  dongName?: string;
   containerBg?: string;
   inputBg?: string;
   listBg?: string;
@@ -23,6 +24,7 @@ interface SelectLocationProps {
 }
 
 export default function SelectLocation({
+  dongName = "",
   containerBg = "#f3f3f3",
   inputBg = "$white",
   listBg = "$white",
@@ -34,6 +36,12 @@ export default function SelectLocation({
   showListOnInput = false, // 기본은 항상 표시
 }: SelectLocationProps) {
   const [searchText, setSearchText] = useState("");
+
+  useEffect(() => {
+    if (dongName) {
+      setSearchText(dongName);
+    }
+  }, [dongName]);
 
   const regions = [
     "서울특별시 종로구 부암동",
