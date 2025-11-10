@@ -98,7 +98,6 @@ export default function EventAlarm() {
           paddingBottom: 120,
         }}
       >
-
         {/* 사고 유형 */}
         {/* 제목 + 빨간 점 */}
         <HStack mb="$2">
@@ -170,13 +169,9 @@ export default function EventAlarm() {
           </Text>
         </HStack>
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
-          <HStack
-            style={{
-              justifyContent: "center",
-            }}
-          >
+          <HStack style={{ justifyContent: "center" }}>
             <Text color="$coolGray800" fontWeight="$semibold">
-              서울 관악구 관악로 1
+              {address ? address : "지도에서 위치를 선택하세요."}
             </Text>
           </HStack>
         </Box>
@@ -190,8 +185,8 @@ export default function EventAlarm() {
           justifyContent="center"
           alignItems="center"
         >
-          {/* KakaoMap은 보통 WebView 기반이라 부모 높이에 맞춰야 해서 width/height 100%를 줍니다 */}
-          <MapWrapper />
+          <MapWrapper onAddressChange={(addr) => setAddress(addr)} />{" "}
+          {/* ★ 수정 */}
         </Box>
 
         {/* 사고 위치(주소 텍스트) */}

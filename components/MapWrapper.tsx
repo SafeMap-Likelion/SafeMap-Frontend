@@ -3,10 +3,22 @@ import { StyleSheet, View, StyleProp, ViewStyle } from "react-native";
 import { WebView } from "react-native-webview";
 
 type Props = {
-  style?: StyleProp<ViewStyle>; // 부모(Box)에서 style 넘길 수 있게
+  style?: StyleProp<ViewStyle>;
+  onAddressChange?: (address: string) => void; // ★ 추가
 };
 
-export default function KakaoMap({ style }: Props) {
+export default function MapWrapper({ style, onAddressChange }: Props) {
+  const handleMessage = (event: { nativeEvent: { data: string } }) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.type === "address_changed" && data.payload?.fullAddress) {
+        onAddressChange?.(data.payload.fullAddress);
+      }
+    } catch (e) {
+      console.log("Invalid message from WebView:", e);
+    }
+  };
+
   return (
     <View style={[styles.container, style]}>
       <WebView
@@ -14,12 +26,11 @@ export default function KakaoMap({ style }: Props) {
         originWhitelist={["*"]}
         javaScriptEnabled
         domStorageEnabled
-        // 박스 안에서만 스크롤(맵 드래그)되게
-        nestedScrollEnabled // (Android) 내부 스크롤 허용
+        nestedScrollEnabled
         overScrollMode="never"
-        scrollEnabled // 기본 true지만 명시
+        scrollEnabled
         style={styles.webview}
-        onMessage={(e) => console.log("WebView says:", e.nativeEvent.data)}
+        onMessage={handleMessage} // ★ 수정
         onError={(e) => console.log("WebView error:", e.nativeEvent)}
         onHttpError={(e) =>
           console.log("HTTP error:", e.nativeEvent.statusCode)
@@ -32,10 +43,10 @@ export default function KakaoMap({ style }: Props) {
 const styles = StyleSheet.create({
   container: {
     width: "100%",
-    height: "100%", // 부모(Box)가 주는 높이를 채움
+    height: "100%",
   },
   webview: {
     width: "100%",
-    height: "100%", // WebView도 컨테이너를 채움
+    height: "100%",
   },
 });

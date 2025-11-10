@@ -1,57 +1,92 @@
-//개별 사건 게시물 상세 화면
-import React from 'react';
-import PostView from '../../components/PostView';
-import {
-  Box,
-  HStack,
-  Text,
-  Button,
-  ButtonText,
-  Image,
-} from '@gluestack-ui/themed';
-import { useRouter } from 'expo-router';
+import React, { useEffect } from "react";
+import { Animated, Dimensions, PanResponder } from "react-native";
+import { Box } from "@gluestack-ui/themed";
+import PostView from "@/components/PostView";
+import { ReportDetail } from "@/api/types";
 
-/**
- * 개별 사건 게시물 상세 화면입니다.
- */
-export default function PostDetailViewScreen() {
-  const router = useRouter();
+const screenHeight = Dimensions.get("window").height;
+
+export default function PostDetailViewScreen({
+  reportDetail, // ✅ props 받아오기
+  onClose,
+}: {
+  reportDetail: ReportDetail;
+  onClose: () => void;
+}) {
+  const translateY = React.useRef(new Animated.Value(screenHeight)).current;
+
+  useEffect(() => {
+    Animated.timing(translateY, {
+      toValue: 0,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const panResponder = PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gestureState) => gestureState.dy > 10,
+    onPanResponderMove: (_, gestureState) => {
+      if (gestureState.dy > 0) translateY.setValue(gestureState.dy);
+    },
+    onPanResponderRelease: (_, gestureState) => {
+      if (gestureState.dy > 120) {
+        Animated.timing(translateY, {
+          toValue: screenHeight,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(onClose);
+      } else {
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+    },
+  });
+
+  const handleBackdropPress = () => {
+    Animated.timing(translateY, {
+      toValue: screenHeight,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(onClose);
+  };
+
+  if (!reportDetail) return null; // ✅ 안전장치 추가
 
   return (
-    <Box flex={1} bg="$white" pt={50}>
-      {/* Header */}
-      <HStack
-        px="$4"
-        pt="$4"
-        pb="$2"
-        justifyContent="space-between"
-        alignItems="center"
-      >
-        <Text fontSize={40} fontWeight="bold" color="black">집주변</Text>
-        <Button
-          action="secondary"
-          bg="#F3F3F3"
-          rounded="$xl"
-          px={10}
-          py={10}
-          onPress={() => router.push("/(main)/news-page")}
-        >
-          <HStack alignItems="center" space="xs">
-            <ButtonText fontSize={15} color="#333" fontWeight="800">
-              '봉천동' 뉴스 보러가기
-            </ButtonText>
-            <Image
-              source={require("@/assets/images/icon3.png")}
-              style={{ width: 24, height: 24 }}
-            />
-          </HStack>
-        </Button>
-      </HStack>
+    <>
+      {/* 반투명 배경 */}
+      <Box
+        position="absolute"
+        top={0}
+        left={0}
+        right={0}
+        bottom={0}
+        bg="rgba(0,0,0,0.4)"
+        zIndex={30}
+        onTouchStart={handleBackdropPress}
+      />
 
-      {/* Content */}
-      <Box flex={1}>
-        <PostView />
-      </Box>
-    </Box>
+      {/* 슬라이드 모달 */}
+      <Animated.View
+        {...panResponder.panHandlers}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "85%",
+          backgroundColor: "white",
+          borderTopLeftRadius: 20,
+          borderTopRightRadius: 20,
+          transform: [{ translateY }],
+          zIndex: 40,
+        }}
+      >
+        {/* ✅ props 전달 */}
+        <PostView reportDetail={reportDetail} />
+      </Animated.View>
+    </>
   );
 }

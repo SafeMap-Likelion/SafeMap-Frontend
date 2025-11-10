@@ -12,7 +12,11 @@ if (Platform.OS === "android") {
   }
 }
 
-export default function MapControlPanel() {
+interface MapControlPanelProps {
+  dongName?: string;
+}
+
+export default function MapControlPanel({ dongName }: MapControlPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
 
@@ -55,6 +59,7 @@ export default function MapControlPanel() {
       <VStack>
         {/* 지역 선택창 */}
         <SelectLocation
+          dongName={dongName}
           containerBg="$white"
           inputBg="#F3F3F3"
           listBg="#F3F3F3"
@@ -95,7 +100,10 @@ export default function MapControlPanel() {
                   {visibleCategories.map((cat, i) => {
                     const isSelected = selectedCategories.includes(cat);
                     return (
-                      <Pressable key={i} onPress={() => handleCategoryPress(cat)}>
+                      <Pressable
+                        key={i}
+                        onPress={() => handleCategoryPress(cat)}
+                      >
                         <Box
                           bg={isSelected ? "#FFE6E6" : "$white"}
                           px={10}
@@ -118,12 +126,7 @@ export default function MapControlPanel() {
               </ScrollView>
             ) : (
               // 펼쳤을 때: 여러 줄로 표시
-              <HStack
-                flexWrap="wrap"
-                space="sm"
-                alignItems="center"
-                flex={1}
-              >
+              <HStack flexWrap="wrap" space="sm" alignItems="center" flex={1}>
                 {visibleCategories.map((cat, i) => {
                   const isSelected = selectedCategories.includes(cat);
                   return (

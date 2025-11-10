@@ -3,7 +3,18 @@ import { StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 
-export default function KakaoMap() {
+export default function KakaoMap({
+  onCenterChange,
+}: {
+  onCenterChange: (payload: any) => void;
+}) {
+  const handleMessage = (event: { nativeEvent: { data: string } }) => {
+    const data = JSON.parse(event.nativeEvent.data);
+    if (data.type === "address_changed") {
+      onCenterChange(data.payload.dong);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <WebView
@@ -12,9 +23,7 @@ export default function KakaoMap() {
         javaScriptEnabled={true}
         domStorageEnabled={true}
         style={styles.webview}
-        onMessage={(event) => {
-          console.log("WebView says:", event.nativeEvent.data);
-        }}
+        onMessage={handleMessage}
         onError={(e) => console.log("WebView error:", e.nativeEvent)}
         onHttpError={(e) =>
           console.log("WebView HTTP error:", e.nativeEvent.statusCode)
