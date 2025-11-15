@@ -53,5 +53,6 @@ Join our community of developers creating universal apps.
 GPS (geo-location) 기능을 사용에 문제가 있을 경우에는
 ```
 npx expo install expo-location
+npx expo install react-native-webview
 ```
 을 입력

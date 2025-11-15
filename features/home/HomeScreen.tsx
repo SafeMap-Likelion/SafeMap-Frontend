@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useRouter } from "expo-router";
 import {
   Box,
@@ -7,22 +7,106 @@ import {
   HStack,
   Image,
   Pressable,
+  Text,
 } from "@gluestack-ui/themed";
 import KakaoMap from "@/components/KakaoMap";
+import NewKakaoMap from "@/components/NewKakaoMap";
 import MapControlPanel from "./components/MapControlPanel";
+import MyLocationButton from "./components/MyLocationButton";
 import Geolocation from "@/components/Geolocation";
 import { getReportDetail } from "@/api/apis";
 import PostDetailViewScreen from "@/features/post/PostDetailViewScreen";
 import { ReportDetail } from "@/api/types";
 
+import * as Location from "expo-location";
+import { MaterialIcons } from "@expo/vector-icons";
+
+// NewKakaoMap 컴포넌트의 ref 타입을 정의합니다.
+interface MapRef {
+  recenter: (lat: number, lon: number) => void;
+}
+
 export default function HomeScreen() {
+  const [location, setLocation] = useState<{ 
+    latitude: number; longitude: number 
+  } | null>(null);
+  const [address, setAddress] = useState<string | undefined>(undefined);
   const router = useRouter();
+
+  const mapRef = useRef<MapRef>(null);
+
+  const getAddress = async (latitude: number, longitude: number) => {
+    try {
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.documents && data.documents.length > 0) {
+        const doc = data.documents[0];
+        const fetchedAddress = doc.address.address_name;
+        setAddress(fetchedAddress);
+
+        const dong = (doc.road_address && doc.road_address.region_3depth_h_name) || 
+                     (doc.address && doc.address.region_3depth_h_name) ||
+                     (doc.road_address && doc.road_address.region_3depth_name) ||
+                     (doc.address && doc.address.region_3depth_name);
+        if (dong) {
+            setDongName(dong);
+        }
+      }
+    } catch (error) {
+      console.error('주소를 가져오는 데 실패했습니다:', error);
+    }
+  };
+
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      // 현재 위치 가져오기
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        console.log('Current location fetched:', coords);
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+        getAddress(coords.latitude, coords.longitude);
+      } catch (error) {
+        console.error('위치 정보를 가져오는 데 실패했습니다:', error);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
+
+  const handleRecenter = async () => {
+    try {
+      const { coords } = await Location.getCurrentPositionAsync({});
+      // console.log('Recenter location fetched:', coords);
+      const newLocation = {
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      };
+      setLocation(newLocation);
+      getAddress(newLocation.latitude, newLocation.longitude);
+      if (mapRef.current) {
+        mapRef.current.recenter(newLocation.latitude, newLocation.longitude);
+      }
+    } catch (error) {
+      console.error('현재 위치를 가져오는 데 실패했습니다:', error);
+    }
+  };
+
   const [dongName, setDongName] = useState("");
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
 
-  const handleCenterChange = (newDong: string) => {
-    setDongName(newDong);
+  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+    getAddress(coords.latitude, coords.longitude);
   };
 
   const handleMarkerPress = async () => {
@@ -38,7 +122,19 @@ export default function HomeScreen() {
   return (
     <Box flex={1} position="relative">
       {/* 지도 */}
-      <KakaoMap onCenterChange={handleCenterChange} />
+      {/* <KakaoMap onCenterChange={handleCenterChange} /> */}
+      {/* 지도 (바닥 레이어) */}
+      {location ? (
+        <NewKakaoMap 
+          ref={mapRef}
+          latitude={location.latitude} 
+          longitude={location.longitude} 
+          onCenterChangeCoordinates={handleCenterChangeCoordinates}
+        />
+      ) : (
+        <Text>위치 정보를 불러오는 중...</Text>
+      )}
+
 
       {/* 지도 위 패널 */}
       <Box
@@ -92,7 +188,7 @@ export default function HomeScreen() {
         </HStack>
       </Box>
 
-      {/* ✅ 중앙 좌측 마커 */}
+       {/* ✅ 중앙 좌측 마커 */}
       <Pressable
         onPress={handleMarkerPress}
         position="absolute"
@@ -115,10 +211,8 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* 현재 위치 버튼 */}
-      <Box position="absolute" bottom={40} right={20} zIndex={10}>
-        <Geolocation />
-      </Box>
+      {/* 내 위치 버튼 */}
+      <MyLocationButton onPress={handleRecenter} />
     </Box>
   );
 }
