@@ -36,8 +36,6 @@ export default function HomeScreen() {
   const mapRef = useRef<MapRef>(null);
 
   const getAddress = async (latitude: number, longitude: number) => {
-    console.log('getAddress called with:', { latitude, longitude });
-    console.log('Kakao REST API Key:', process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY);
     try {
       const response = await fetch(
         `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
@@ -48,11 +46,18 @@ export default function HomeScreen() {
         }
       );
       const data = await response.json();
-      console.log('Kakao Geocoding API response:', data);
       if (data.documents && data.documents.length > 0) {
-        const fetchedAddress = data.documents[0].address.address_name;
+        const doc = data.documents[0];
+        const fetchedAddress = doc.address.address_name;
         setAddress(fetchedAddress);
-        console.log('Address set to:', fetchedAddress);
+
+        const dong = (doc.road_address && doc.road_address.region_3depth_h_name) || 
+                     (doc.address && doc.address.region_3depth_h_name) ||
+                     (doc.road_address && doc.road_address.region_3depth_name) ||
+                     (doc.address && doc.address.region_3depth_name);
+        if (dong) {
+            setDongName(dong);
+        }
       }
     } catch (error) {
       console.error('주소를 가져오는 데 실패했습니다:', error);
@@ -81,7 +86,7 @@ export default function HomeScreen() {
   const handleRecenter = async () => {
     try {
       const { coords } = await Location.getCurrentPositionAsync({});
-      console.log('Recenter location fetched:', coords);
+      // console.log('Recenter location fetched:', coords);
       const newLocation = {
         latitude: coords.latitude,
         longitude: coords.longitude,
@@ -96,13 +101,12 @@ export default function HomeScreen() {
     }
   };
 
-
   const [dongName, setDongName] = useState("");
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
 
-  const handleCenterChange = (newDong: string) => {
-    setDongName(newDong);
+  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+    getAddress(coords.latitude, coords.longitude);
   };
 
   const handleMarkerPress = async () => {
@@ -125,6 +129,7 @@ export default function HomeScreen() {
           ref={mapRef}
           latitude={location.latitude} 
           longitude={location.longitude} 
+          onCenterChangeCoordinates={handleCenterChangeCoordinates}
         />
       ) : (
         <Text>위치 정보를 불러오는 중...</Text>
@@ -183,7 +188,7 @@ export default function HomeScreen() {
         </HStack>
       </Box>
 
-      {/* ✅ 중앙 좌측 마커 */}
+       {/* ✅ 중앙 좌측 마커 */}
       <Pressable
         onPress={handleMarkerPress}
         position="absolute"
