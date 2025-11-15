@@ -115,10 +115,7 @@ export default function HomeScreen() {
         />
       )}
 
-      {/* 현재 위치 버튼 */}
-      <Box position="absolute" bottom={40} right={20} zIndex={10}>
-        <Geolocation />
-      </Box>
+      
     </Box>
   );
 }
