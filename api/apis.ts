@@ -8,6 +8,7 @@ import report_reaction_dummy from "../dummy/report_reaction_dummy.json";
 import report_id_dummy from "../dummy/report_id_dummy.json";
 import favorite_region_ids_dummy from "../dummy/favorite_region_ids_dummy.json";
 import user_info from "../dummy/user_info_dummy.json";
+import autocomplete_dummy from "../dummy/autocomplete_dummy.json";
 
 import {
   DangerZone,
@@ -26,7 +27,15 @@ import {
   FavoriteRegion,
   UserInfo,
   FavoriteRegionId,
+  LocationSearchResult,
 } from "./types";
+
+// locsearch 자동 완성 api
+export async function getLocationSearch(): Promise<LocationSearchResult[]> {
+  const URL = `/api/maps/loc_search/`;
+  const locationSearchResults: LocationSearchResult[] = autocomplete_dummy;
+  return locationSearchResults;
+}
 
 // dangerzone 정보 가져오기 api
 export async function getDangerzoneList(): Promise<DangerZone[]> {

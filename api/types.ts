@@ -139,3 +139,7 @@ export type UserInfo = {
   username: string;
   sns: string;
 };
+
+export type LocationSearchResult = {
+  result: string;
+};
