@@ -41,6 +41,7 @@
     "lucide-react-native": "^0.545.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hook-form": "^7.66.0",
     "react-native": "0.81.4",
     "react-native-emoji-selector": "^0.2.0",
     "react-native-gesture-handler": "~2.28.0",

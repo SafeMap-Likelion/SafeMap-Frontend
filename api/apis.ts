@@ -31,10 +31,17 @@ import {
 } from "./types";
 
 // locsearch 자동 완성 api
-export async function getLocationSearch(): Promise<LocationSearchResult[]> {
-  const URL = `/api/maps/loc_search/`;
+export async function getLocationSearch(
+  query: string
+): Promise<LocationSearchResult[]> {
+  const URL = `/api/maps/loc_search/?query=${query}`;
   const locationSearchResults: LocationSearchResult[] = autocomplete_dummy;
-  return locationSearchResults;
+
+  if (!query) {
+    return [];
+  }
+
+  return locationSearchResults.filter((item) => item.result.includes(query));
 }
 
 // dangerzone 정보 가져오기 api
