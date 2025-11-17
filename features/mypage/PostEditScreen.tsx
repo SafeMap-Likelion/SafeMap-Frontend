@@ -102,11 +102,11 @@ export default function PostEditScreen() {
         </HStack>
 
         {/* 사고 유형 */}
-        <HStack mb="$2">
+        <HStack mb="$2" alignItems="center">
           <Text color="$coolGray800" fontWeight="$semibold">
             사고 유형
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
           <HStack
@@ -131,11 +131,11 @@ export default function PostEditScreen() {
         </Box>
 
         {/* 위험도 */}
-        <HStack mb="$2">
+        <HStack mb="$2" alignItems="center">
           <Text color="$coolGray800" fontWeight="$semibold">
             위험도
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
           <HStack
@@ -160,12 +160,12 @@ export default function PostEditScreen() {
         </Box>
 
         {/* 지도 표시 위치 */}
-        <HStack mb="$2">
+        <HStack mb="$2" alignItems="flex-end">
           <Text color="$coolGray800" fontWeight="$semibold">
             지도 표시 위치
-            <Text color="$coolGray800" fontSize={8}>
-              현재 위치로 자동 입력됩니다.
-            </Text>
+          </Text>
+          <Text color="$coolGray800" fontSize={8} ml="$1">
+            현재 위치로 자동 입력됩니다.
           </Text>
         </HStack>
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
@@ -193,11 +193,11 @@ export default function PostEditScreen() {
         </Box>
 
         {/* 사고 위치 */}
-        <HStack mb="$2">
+        <HStack mb="$2" alignItems="center">
           <Text color="$coolGray800" fontWeight="$semibold">
             사고 위치
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Input mb="$5">
           <InputField
@@ -208,11 +208,11 @@ export default function PostEditScreen() {
         </Input>
 
         {/* 제목 */}
-        <HStack mb="$2">
+        <HStack mb="$2" alignItems="center">
           <Text color="$coolGray800" fontWeight="$semibold">
             제목
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Input mb="$5">
           <InputField

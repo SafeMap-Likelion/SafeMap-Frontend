@@ -119,8 +119,8 @@ export default function EventAlarm() {
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             사고 유형
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         {/* 연한 회색 배경 박스 안에 칩들 배치 */}
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
@@ -150,8 +150,8 @@ export default function EventAlarm() {
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             위험도
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
           <HStack
@@ -179,9 +179,9 @@ export default function EventAlarm() {
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             지도 표시 위치
-            <Text color="$coolGray800" fontSize={10}>
-              *현재 위치로 자동 입력됩니다.
-            </Text>
+          </Text>
+          <Text color="$coolGray800" fontSize={10}>
+            *현재 위치로 자동 입력됩니다.
           </Text>
         </HStack>
         <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
@@ -201,7 +201,7 @@ export default function EventAlarm() {
           justifyContent="center"
           alignItems="center"
         >
-          <MapWrapper onAddressChange={(addr) => setAddress(addr)} />{" "}
+          <MapWrapper onAddressChange={(addr) => setAddress(addr)} />
           {/* ★ 수정 */}
         </Box>
 
@@ -210,8 +210,8 @@ export default function EventAlarm() {
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             사고 위치
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Input mb="$5">
           <InputField
@@ -226,8 +226,8 @@ export default function EventAlarm() {
         <HStack mb="$2">
           <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
             제목
-            <Text color="$red500"> *</Text>
           </Text>
+          <Text color="$red500"> *</Text>
         </HStack>
         <Input mb="$5">
           <InputField
