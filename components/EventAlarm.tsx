@@ -1,5 +1,5 @@
 // app/(main)/report-incident.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   HStack,
@@ -20,6 +20,15 @@ import { useRouter } from "expo-router";
 import { Image as RNImage, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import MapWrapper from "./MapWrapper";
+
+import NewKakaoMap from "./NewKakaoMap";
+import * as Location from "expo-location";
+
+// NewKakaoMap 컴포넌트의 ref 타입을 정의합니다.
+interface MapRef {
+  recenter: (lat: number, lon: number) => void;
+}
+
 
 //타입/상수
 const DangerLevel = ["낮음", "중간", "높음"];
@@ -73,17 +82,65 @@ function SelectChip({
 
 //메인 화면 (정적 UI)
 export default function EventAlarm() {
+  const mapRef = useRef<MapRef>(null);
+  const [location, setLocation] = useState<{ 
+      latitude: number; longitude: number 
+    } | null>(null);
+  const [address, setAddress] = useState<string | undefined>(undefined);
   const router = useRouter();
 
   const [category, setCategory] = useState<string>("🏗️ 시설/인프라");
   const [level, setLevel] = useState<string>("중간");
-  const [address, setAddress] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [desc, setDesc] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
 
+  const getAddress = async (latitude: number, longitude: number) => {
+    try {
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.documents && data.documents.length > 0) {
+        const doc = data.documents[0];
+        const fetchedAddress = doc.road_address.address_name;
+        setAddress(fetchedAddress);
+      }
+    } catch (error) {
+      // console.error('주소를 가져오는 데 실패했습니다:', error);
+    }
+  };
+
+  useEffect(() => {
+      const getCurrentLocation = async () => {
+        // 현재 위치 가져오기
+        try {
+          const { coords } = await Location.getCurrentPositionAsync({});
+          console.log('Current location fetched:', coords);
+          setLocation({
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          });
+          getAddress(coords.latitude, coords.longitude);
+        } catch (error) {
+          console.error('위치 정보를 가져오는 데 실패했습니다:', error);
+        }
+      };
+  
+      getCurrentLocation();
+    }, []);
+
+  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+    getAddress(coords.latitude, coords.longitude);
+  };
+
   //필수항목 작성했을 때만 제출 버튼이 눌리도록!
-  const canSubmit = title.trim().length > 0 && address.trim().length > 0;
+  const canSubmit = title.trim().length > 0 && address?.trim().length! > 0 && category.trim().length > 0 && level.trim().length > 0;
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
@@ -196,12 +253,20 @@ export default function EventAlarm() {
           borderWidth={1}
           borderColor="$coolGray200"
           borderRadius="$lg"
-          overflow="hidden"
           mb="$3"
-          justifyContent="center"
-          alignItems="center"
+          
         >
-          <MapWrapper onAddressChange={(addr) => setAddress(addr)} />
+          {/* <MapWrapper onAddressChange={(addr) => setAddress(addr)} /> */}
+          {location ? (
+            <NewKakaoMap 
+              ref={mapRef}
+              latitude={location.latitude} 
+              longitude={location.longitude} 
+              onCenterChangeCoordinates={handleCenterChangeCoordinates}
+            />
+          ) : (
+            <Text>위치 정보를 불러오는 중...</Text>
+          )}
           {/* ★ 수정 */}
         </Box>
 
