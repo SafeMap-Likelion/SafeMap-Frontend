@@ -49,10 +49,13 @@ Join our community of developers creating universal apps.
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
-## How to use geolocation? (by 용찬)
-GPS (geo-location) 기능을 사용에 문제가 있을 경우에는
+## Install Dependencies (by 용찬)
+1. GPS (geo-location) 기능을 사용
+2. 지도를 불러오는 Webview 기능
+3. Image upload 기능
 ```
 npx expo install expo-location
 npx expo install react-native-webview
+npx expo install expo-image-picker
 ```
 을 입력

@@ -15,9 +15,10 @@ import {
   ButtonText,
   Icon,
 } from "@gluestack-ui/themed";
-import { ArrowLeftIcon, ImageIcon } from "@gluestack-ui/themed";
+import { ArrowLeftIcon } from "@gluestack-ui/themed";
 import { useRouter } from "expo-router";
-// import { Image as RNImage } from "react-native";
+import { Image as RNImage, Alert } from "react-native";
+import * as ImagePicker from "expo-image-picker";
 import MapWrapper from "./MapWrapper";
 
 //타입/상수
@@ -79,9 +80,24 @@ export default function EventAlarm() {
   const [address, setAddress] = useState<string>("");
   const [title, setTitle] = useState<string>("");
   const [desc, setDesc] = useState<string>("");
+  const [image, setImage] = useState<string | null>(null);
 
   //필수항목 작성했을 때만 제출 버튼이 눌리도록!
   const canSubmit = title.trim().length > 0 && address.trim().length > 0;
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
 
   return (
     <Box flex={1} bg="$white" pt={60}>
@@ -227,23 +243,31 @@ export default function EventAlarm() {
             현장 이미지
           </Text>
         </HStack>
-        <Box
-          h={120}
-          borderWidth={1}
-          borderStyle="dashed"
-          borderColor="$coolGray300"
-          borderRadius="$lg"
-          mb="$5"
-          alignItems="center"
-          justifyContent="center"
-          bg="$coolGray50"
-          overflow="hidden"
-        >
-          <HStack justifyContent="center" alignItems="center">
-            <Icon as={ImageIcon} />
-            <Text color="$coolGray500">이미지 추가</Text>
-          </HStack>
-        </Box>
+        <Pressable onPress={pickImage}>
+          <Box
+            h={120}
+            borderWidth={1}
+            borderStyle="dashed"
+            borderColor="$coolGray300"
+            borderRadius="$lg"
+            mb="$5"
+            alignItems="center"
+            justifyContent="center"
+            bg="$coolGray50"
+            overflow="hidden"
+          >
+            {image ? (
+              <RNImage
+                source={{ uri: image }}
+                style={{ width: "100%", height: "100%" }}
+              />
+            ) : (
+              <HStack justifyContent="center" alignItems="center">
+                <Text color="$coolGray500">이미지 추가</Text>
+              </HStack>
+            )}
+          </Box>
+        </Pressable>
 
         {/* 설명 */}
 
