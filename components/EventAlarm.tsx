@@ -29,7 +29,6 @@ interface MapRef {
   recenter: (lat: number, lon: number) => void;
 }
 
-
 //타입/상수
 const DangerLevel = ["낮음", "중간", "높음"];
 const CATEGORIES = [
@@ -83,9 +82,10 @@ function SelectChip({
 //메인 화면 (정적 UI)
 export default function EventAlarm() {
   const mapRef = useRef<MapRef>(null);
-  const [location, setLocation] = useState<{ 
-      latitude: number; longitude: number 
-    } | null>(null);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [address, setAddress] = useState<string | undefined>(undefined);
   const router = useRouter();
 
@@ -117,37 +117,43 @@ export default function EventAlarm() {
   };
 
   useEffect(() => {
-      const getCurrentLocation = async () => {
-        // 현재 위치 가져오기
-        try {
-          const { coords } = await Location.getCurrentPositionAsync({});
-          console.log('Current location fetched:', coords);
-          setLocation({
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-          });
-          getAddress(coords.latitude, coords.longitude);
-        } catch (error) {
-          console.error('위치 정보를 가져오는 데 실패했습니다:', error);
-        }
-      };
-  
-      getCurrentLocation();
-    }, []);
+    const getCurrentLocation = async () => {
+      // 현재 위치 가져오기
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        console.log("Current location fetched:", coords);
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+        getAddress(coords.latitude, coords.longitude);
+      } catch (error) {
+        console.error("위치 정보를 가져오는 데 실패했습니다:", error);
+      }
+    };
 
-  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+    getCurrentLocation();
+  }, []);
+
+  const handleCenterChangeCoordinates = (coords: {
+    latitude: number;
+    longitude: number;
+  }) => {
     getAddress(coords.latitude, coords.longitude);
   };
 
   //필수항목 작성했을 때만 제출 버튼이 눌리도록!
-  const canSubmit = title.trim().length > 0 && address?.trim().length! > 0 && category.trim().length > 0 && level.trim().length > 0;
+  const canSubmit =
+    title.trim().length > 0 &&
+    address?.trim().length! > 0 &&
+    category.trim().length > 0 &&
+    level.trim().length > 0;
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      allowsEditing: true,
-      aspect: [4, 3],
+      mediaTypes: ["images", "videos"],
+      allowsEditing: false,
       quality: 1,
     });
 
@@ -170,6 +176,7 @@ export default function EventAlarm() {
           paddingHorizontal: 20,
           paddingBottom: 120,
         }}
+        nestedScrollEnabled={true}
       >
         {/* 사고 유형 */}
         {/* 제목 + 빨간 점 */}
@@ -254,14 +261,13 @@ export default function EventAlarm() {
           borderColor="$coolGray200"
           borderRadius="$lg"
           mb="$3"
-          
         >
           {/* <MapWrapper onAddressChange={(addr) => setAddress(addr)} /> */}
           {location ? (
-            <NewKakaoMap 
+            <NewKakaoMap
               ref={mapRef}
-              latitude={location.latitude} 
-              longitude={location.longitude} 
+              latitude={location.latitude}
+              longitude={location.longitude}
               onCenterChangeCoordinates={handleCenterChangeCoordinates}
             />
           ) : (
@@ -295,11 +301,7 @@ export default function EventAlarm() {
           <Text color="$red500"> *</Text>
         </HStack>
         <Input mb="$5">
-          <InputField
-            placeholder="예) 내가 지나가다 나무가 쓰러져 있었는데, 2층 유리를 밟음"
-            value={title}
-            onChangeText={setTitle}
-          />
+          <InputField value={title} onChangeText={setTitle} px="$3" />
         </Input>
 
         {/* 현장 이미지: 정적 UI(업로드 없음) */}
@@ -310,7 +312,8 @@ export default function EventAlarm() {
         </HStack>
         <Pressable onPress={pickImage}>
           <Box
-            h={120}
+            width="100%"
+            aspectRatio={1}
             borderWidth={1}
             borderStyle="dashed"
             borderColor="$coolGray300"
@@ -325,6 +328,7 @@ export default function EventAlarm() {
               <RNImage
                 source={{ uri: image }}
                 style={{ width: "100%", height: "100%" }}
+                resizeMode="contain"
               />
             ) : (
               <HStack justifyContent="center" alignItems="center">
