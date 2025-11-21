@@ -95,6 +95,7 @@ export default function EventAlarm() {
   const [title, setTitle] = useState<string>("");
   const [desc, setDesc] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
+  const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
   const markerBaseUrl =
     "https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers";
 
@@ -190,6 +191,9 @@ export default function EventAlarm() {
     }
   };
 
+  const handleMapTouchStart = () => setScrollEnabled(false);
+  const handleMapTouchEnd = () => setScrollEnabled(true);
+
   return (
     <Box flex={1} bg="$white" pt={60}>
       {/* Header */}
@@ -205,6 +209,7 @@ export default function EventAlarm() {
           paddingBottom: 120,
         }}
         nestedScrollEnabled={true}
+        scrollEnabled={scrollEnabled}
       >
         {/* 사고 유형 */}
         {/* 제목 + 빨간 점 */}
@@ -292,6 +297,9 @@ export default function EventAlarm() {
           mb="$3"
           position="relative"
           overflow="hidden"
+          onTouchStart={handleMapTouchStart}
+          onTouchEnd={handleMapTouchEnd}
+          onTouchCancel={handleMapTouchEnd}
         >
           {/* <MapWrapper onAddressChange={(addr) => setAddress(addr)} /> */}
           {location ? (
