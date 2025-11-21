@@ -43,23 +43,18 @@ export default function SelectLocation({
 }: SelectLocationProps) {
   const { control, watch, setValue } = useForm({
     defaultValues: {
-      search: dongName,
+      search: "",
     },
   });
   const searchText = watch("search");
   const [searchResults, setSearchResults] = useState<LocationSearchResult[]>(
     []
   );
-
-  useEffect(() => {
-    if (dongName) {
-      setValue("search", dongName);
-    }
-  }, [dongName, setValue]);
+  const [isUserTyping, setIsUserTyping] = useState(false);
 
   useEffect(() => {
     const handler = setTimeout(() => {
-      if (searchText) {
+      if (searchText && isUserTyping) {
         getLocationSearch(searchText).then(setSearchResults);
       } else {
         setSearchResults([]);
@@ -69,31 +64,26 @@ export default function SelectLocation({
     return () => {
       clearTimeout(handler);
     };
-  }, [searchText]);
+  }, [searchText, isUserTyping]);
 
   const handleSelectLocation = (selectedLocation: string) => {
     setValue("search", selectedLocation);
     setSearchResults([]); // Clear search results after selection
+    setIsUserTyping(false);
     if (onSelect) {
       onSelect(selectedLocation);
     }
   };
 
   const shouldShowList =
-    !showListOnInput || (showListOnInput && searchText.trim().length > 0);
+    !showListOnInput ||
+    (showListOnInput && searchText.trim().length > 0 && isUserTyping);
 
   return (
-    <Box
-      width="100%"
-      bg={containerBg}
-      py={10}
-      px={15}
-      rounded="$2xl"
-      alignSelf="center"
-    >
-      <VStack flex={1} space="md">
+    <Box width="100%" bg={containerBg} py={5} rounded="$2xl" alignSelf="center">
+      <VStack flex={1}>
         {/* 검색창 영역 */}
-        <HStack alignItems="center" mb="$3">
+        <HStack alignItems="center">
           <Input
             borderColor="transparent"
             h={36}
@@ -124,10 +114,14 @@ export default function SelectLocation({
                     fontSize={12}
                     textAlign="center"
                     fontWeight="500"
-                    placeholder={placeholder}
+                    placeholder={dongName || placeholder}
+                    placeholderTextColor="#999"
                     color="#565656"
                     value={value}
-                    onChangeText={onChange}
+                    onChangeText={(text) => {
+                      setIsUserTyping(true);
+                      onChange(text);
+                    }}
                     onBlur={onBlur}
                   />
                 )}
@@ -143,7 +137,7 @@ export default function SelectLocation({
 
         {/* 결과 리스트 — 입력이 있을 때만 표시할 수 있음 */}
         {shouldShowList && (
-          <Box bg={listBg} rounded="$2xl" flex={1} minHeight={100} p={5}>
+          <Box bg={listBg} rounded="$2xl" flex={1} minHeight={100} p={5} mt={2}>
             {searchResults.length > 0 ? (
               <ScrollView>
                 <VStack space="xs">

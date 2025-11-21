@@ -52,11 +52,12 @@ export default function MapControlPanel({ dongName }: MapControlPanelProps) {
       width="95%"
       alignSelf="center"
       bg="$white"
-      pt={3}
+      pt={2}
       pb={10}
+      px={10}
       rounded="$2xl"
     >
-      <VStack>
+      <VStack space="xs">
         {/* 지역 선택창 */}
         <SelectLocation
           dongName={dongName}
@@ -71,14 +72,7 @@ export default function MapControlPanel({ dongName }: MapControlPanelProps) {
         />
 
         {/* 카테고리 선택 영역 */}
-        <Box
-          bg="#f3f3f3"
-          rounded="$2xl"
-          p="$3"
-          width="90%"
-          alignSelf="center"
-          mt={isExpanded ? 0 : -15}
-        >
+        <Box bg="#f3f3f3" rounded="$2xl" p="$3" width="100%" alignSelf="center">
           <HStack
             justifyContent="space-between"
             alignItems="flex-start"
