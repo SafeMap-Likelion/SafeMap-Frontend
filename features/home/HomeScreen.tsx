@@ -134,9 +134,9 @@ export default function HomeScreen() {
     }
   };
 
-  const handleMarkerPress = async () => {
+  const handleMarkerPress = async (reportId: string) => {
     try {
-      const detail = await getReportDetail("1"); // 더미 ID
+      const detail = await getReportDetail(reportId);
       setReportDetail(detail);
       setDetailVisible(true);
     } catch (e) {
@@ -156,6 +156,7 @@ export default function HomeScreen() {
           longitude={location.longitude}
           nearEvents={nearEvents}
           onCenterChangeCoordinates={handleCenterChangeCoordinates}
+          onMarkerClick={handleMarkerPress}
         />
       ) : (
         <Text>위치 정보를 불러오는 중...</Text>
@@ -212,21 +213,6 @@ export default function HomeScreen() {
           </Button>
         </HStack>
       </Box>
-
-      {/* ✅ 중앙 좌측 마커 */}
-      <Pressable
-        onPress={handleMarkerPress}
-        position="absolute"
-        top="45%"
-        left="25%"
-        zIndex={20}
-      >
-        <Image
-          source={require("@/assets/images/orangeMarker.png")}
-          style={{ width: 40, height: 40 }}
-          alt="marker"
-        />
-      </Pressable>
 
       {/* ✅ 상세 뷰 (슬라이드 업) */}
       {isDetailVisible && reportDetail && (

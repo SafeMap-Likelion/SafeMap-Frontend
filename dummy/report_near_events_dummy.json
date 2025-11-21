@@ -40,5 +40,12 @@
     "type": "기타/특수",
     "level": 3,
     "report_id": "f8c1b0d3-0bb4-4f6c-ae0f-7cd7cc42c9fa"
+  },
+  {
+    "latitude": "37.5786",
+    "longitude": "126.9771",
+    "type": "시설/인프라",
+    "level": 2,
+    "report_id": "a1d2e3f4-5b6c-7d8e-9f0a-b1c2d3e4f5g6"
   }
 ]

@@ -17,6 +17,7 @@ type KakaoMapProps = {
     latitude: number;
     longitude: number;
   }) => void;
+  onMarkerClick?: (reportId: string) => void;
 };
 
 // 부모 컴포넌트에서 호출할 수 있는 함수 타입 정의
@@ -31,6 +32,7 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
     longitude,
     nearEvents = [],
     onCenterChangeCoordinates,
+    onMarkerClick,
   } = props;
   const webViewRef = useRef<WebView>(null);
 
@@ -76,6 +78,7 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
             .event-marker {
               width: 40px;
               height: 40px;
+              cursor: pointer;
             }
             .event-marker img {
               width: 100%;
@@ -191,15 +194,25 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
                   const markerKey = \`\${typeKey}_\${levelKey}\`;
                   const markerUrl = markerSvgs[markerKey];
 
-                  const content = \`
-                    <div class="event-marker">
-                      <img src="\${markerUrl}" alt="\${event.type} \${event.level}" />
-                    </div>
-                  \`;
+                  // DOM 요소 생성
+                  const markerDiv = document.createElement('div');
+                  markerDiv.className = 'event-marker';
+                  markerDiv.setAttribute('data-report-id', event.report_id);
+                  markerDiv.innerHTML = \`<img src="\${markerUrl}" alt="\${event.type} \${event.level}" />\`;
+
+                  // 클릭 이벤트 추가
+                  markerDiv.addEventListener('click', function() {
+                    const reportId = this.getAttribute('data-report-id');
+                    if (reportId && window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(
+                        JSON.stringify({ type: 'marker_clicked', payload: { reportId: reportId } })
+                      );
+                    }
+                  });
 
                   const marker = new kakao.maps.CustomOverlay({
                     position: position,
-                    content: content,
+                    content: markerDiv,
                     xAnchor: 0.5,
                     yAnchor: 1.0,
                   });
@@ -243,6 +256,9 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
             const data = JSON.parse(event.nativeEvent.data);
             if (data.type === "center_changed" && onCenterChangeCoordinates) {
               onCenterChangeCoordinates(data.payload);
+            }
+            if (data.type === "marker_clicked" && onMarkerClick) {
+              onMarkerClick(data.payload.reportId);
             }
           } catch (e) {
             // console.error is not used to prevent Expo from showing a red screen.
