@@ -109,6 +109,14 @@ export default function HomeScreen() {
   const [dongName, setDongName] = useState("");
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([
+    "🚗 교통",
+    "🌪️ 자연 재해",
+    "🔥 화재/폭발",
+    "🏗️ 시설/인프라",
+    "🚓 범죄/치안",
+    "⚙️ 기타/특수",
+  ]);
 
   const handleCenterChangeCoordinates = async (coords: {
     latitude: number;
@@ -144,6 +152,20 @@ export default function HomeScreen() {
     }
   };
 
+  // 선택된 카테고리에 따라 이벤트 필터링
+  const filteredEvents = nearEvents.filter((event) => {
+    const categoryMap: { [key: string]: string } = {
+      교통: "🚗 교통",
+      "범죄/치안": "🚓 범죄/치안",
+      "시설/인프라": "🏗️ 시설/인프라",
+      "화재/폭발": "🔥 화재/폭발",
+      "자연 재해": "🌪️ 자연 재해",
+      "기타/특수": "⚙️ 기타/특수",
+    };
+    const mappedCategory = categoryMap[event.type];
+    return mappedCategory && selectedCategories.includes(mappedCategory);
+  });
+
   return (
     <Box flex={1} position="relative">
       {/* 지도 */}
@@ -154,7 +176,7 @@ export default function HomeScreen() {
           ref={mapRef}
           latitude={location.latitude}
           longitude={location.longitude}
-          nearEvents={nearEvents}
+          nearEvents={filteredEvents}
           onCenterChangeCoordinates={handleCenterChangeCoordinates}
           onMarkerClick={handleMarkerPress}
         />
@@ -171,7 +193,10 @@ export default function HomeScreen() {
         width="95%"
       >
         <Box flex={1} mb={15}>
-          <MapControlPanel dongName={dongName} />
+          <MapControlPanel
+            dongName={dongName}
+            onCategoryChange={setSelectedCategories}
+          />
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>
           <Button

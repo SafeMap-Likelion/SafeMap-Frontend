@@ -52,6 +52,11 @@ export default function SelectLocation({
   );
   const [isUserTyping, setIsUserTyping] = useState(false);
 
+  // dongName이 변경될 때 isUserTyping을 false로 리셋
+  useEffect(() => {
+    setIsUserTyping(false);
+  }, [dongName]);
+
   useEffect(() => {
     const handler = setTimeout(() => {
       if (searchText && isUserTyping) {

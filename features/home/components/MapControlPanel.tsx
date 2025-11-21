@@ -14,12 +14,13 @@ if (Platform.OS === "android") {
 
 interface MapControlPanelProps {
   dongName?: string;
+  onCategoryChange?: (categories: string[]) => void;
 }
 
-export default function MapControlPanel({ dongName }: MapControlPanelProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
-
+export default function MapControlPanel({
+  dongName,
+  onCategoryChange,
+}: MapControlPanelProps) {
   const categories = [
     "🚗 교통",
     "🌪️ 자연 재해",
@@ -29,6 +30,10 @@ export default function MapControlPanel({ dongName }: MapControlPanelProps) {
     "⚙️ 기타/특수",
   ];
 
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [selectedCategories, setSelectedCategories] =
+    useState<string[]>(categories);
+
   // 토글 애니메이션
   const toggleExpanded = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -37,11 +42,15 @@ export default function MapControlPanel({ dongName }: MapControlPanelProps) {
 
   // 카테고리 선택 / 해제
   const handleCategoryPress = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
+    setSelectedCategories((prev) => {
+      const newCategories = prev.includes(category)
         ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+        : [...prev, category];
+      if (onCategoryChange) {
+        onCategoryChange(newCategories);
+      }
+      return newCategories;
+    });
   };
 
   //  펼쳤을 때는 전체, 닫혔을 때도 전체 (스크롤로)

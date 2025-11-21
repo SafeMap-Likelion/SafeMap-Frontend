@@ -3,6 +3,7 @@ import React, {
   useImperativeHandle,
   useRef,
   useEffect,
+  useMemo,
 } from "react";
 import { View, StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
@@ -56,8 +57,9 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
     }
   }, [nearEvents]);
 
-  // WebView에 삽입될 HTML 및 JavaScript 코드
-  const htmlContent = `
+  // WebView에 삽입될 HTML 및 JavaScript 코드 - latitude, longitude가 변경될 때만 재생성
+  const htmlContent = useMemo(
+    () => `
       <!DOCTYPE html>
       <html>
         <head>
@@ -154,9 +156,8 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
               });
               centerMarker.setMap(map);
 
-              // 초기 이벤트 마커 생성
-              const initialEvents = ${JSON.stringify(nearEvents)};
-              updateEventMarkers(initialEvents);
+              // 초기에는 마커 없이 시작 (nearEvents는 useEffect를 통해 전달됨)
+              updateEventMarkers([]);
 
               document.addEventListener('message', function(event) {
                 try {
@@ -240,7 +241,9 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
           </script>
         </body>
       </html>
-    `;
+    `,
+    [latitude, longitude]
+  );
 
   return (
     <View style={styles.container}>
