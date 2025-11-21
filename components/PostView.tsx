@@ -50,12 +50,27 @@ function RiskBadge({ category, level }: { category: string; level: number }) {
 }
 
 // ✅ 수정됨
-function HeaderWithBadge({ reportDetail }: { reportDetail: ReportDetail }) {
+function HeaderWithBadge({
+  reportDetail,
+  onBackPress,
+}: {
+  reportDetail: ReportDetail;
+  onBackPress?: () => void;
+}) {
   const router = useRouter();
+
+  const handleBack = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else {
+      router.back();
+    }
+  };
+
   return (
     <HStack alignItems="center" justifyContent="space-between">
       <Pressable
-        onPress={() => router.back()}
+        onPress={handleBack}
         hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <FontAwesome name="chevron-left" size={18} color="#374151" />
@@ -181,8 +196,10 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
 
 export default function PostView({
   reportDetail,
+  onBackPress,
 }: {
   reportDetail: ReportDetail;
+  onBackPress?: () => void;
 }) {
   if (!reportDetail) return null;
   return (
@@ -194,7 +211,10 @@ export default function PostView({
       }}
     >
       <Box style={{ marginBottom: 18 }}>
-        <HeaderWithBadge reportDetail={reportDetail} />
+        <HeaderWithBadge
+          reportDetail={reportDetail}
+          onBackPress={onBackPress}
+        />
       </Box>
       <PostContent reportDetail={reportDetail} />
     </ScrollView>

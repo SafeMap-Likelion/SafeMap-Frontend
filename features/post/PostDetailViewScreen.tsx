@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Animated, Dimensions, PanResponder } from "react-native";
+import { Animated, Dimensions, PanResponder, BackHandler } from "react-native";
 import { Box } from "@gluestack-ui/themed";
 import PostView from "@/components/PostView";
 import { ReportDetail } from "@/api/types";
@@ -21,6 +21,17 @@ export default function PostDetailViewScreen({
       duration: 250,
       useNativeDriver: true,
     }).start();
+
+    // 뒤로가기 버튼 핸들러
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      () => {
+        handleBackdropPress();
+        return true; // 이벤트 처리 완료
+      }
+    );
+
+    return () => backHandler.remove();
   }, []);
 
   const panResponder = PanResponder.create({
@@ -85,7 +96,10 @@ export default function PostDetailViewScreen({
         }}
       >
         {/* ✅ props 전달 */}
-        <PostView reportDetail={reportDetail} />
+        <PostView
+          reportDetail={reportDetail}
+          onBackPress={handleBackdropPress}
+        />
       </Animated.View>
     </>
   );

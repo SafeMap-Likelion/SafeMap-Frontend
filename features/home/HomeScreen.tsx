@@ -14,9 +14,9 @@ import NewKakaoMap from "@/components/NewKakaoMap";
 import MapControlPanel from "./components/MapControlPanel";
 import MyLocationButton from "./components/MyLocationButton";
 import Geolocation from "@/components/Geolocation";
-import { getReportDetail } from "@/api/apis";
+import { getReportDetail, getNearEventList } from "@/api/apis";
 import PostDetailViewScreen from "@/features/post/PostDetailViewScreen";
-import { ReportDetail } from "@/api/types";
+import { ReportDetail, NearEvent } from "@/api/types";
 
 import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -27,10 +27,12 @@ interface MapRef {
 }
 
 export default function HomeScreen() {
-  const [location, setLocation] = useState<{ 
-    latitude: number; longitude: number 
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
   } | null>(null);
   const [address, setAddress] = useState<string | undefined>(undefined);
+  const [nearEvents, setNearEvents] = useState<NearEvent[]>([]);
   const router = useRouter();
 
   const mapRef = useRef<MapRef>(null);
@@ -51,16 +53,17 @@ export default function HomeScreen() {
         const fetchedAddress = doc.address.address_name;
         setAddress(fetchedAddress);
 
-        const dong = (doc.road_address && doc.road_address.region_3depth_h_name) || 
-                     (doc.address && doc.address.region_3depth_h_name) ||
-                     (doc.road_address && doc.road_address.region_3depth_name) ||
-                     (doc.address && doc.address.region_3depth_name);
+        const dong =
+          (doc.road_address && doc.road_address.region_3depth_h_name) ||
+          (doc.address && doc.address.region_3depth_h_name) ||
+          (doc.road_address && doc.road_address.region_3depth_name) ||
+          (doc.address && doc.address.region_3depth_name);
         if (dong) {
-            setDongName(dong);
+          setDongName(dong);
         }
       }
     } catch (error) {
-      console.error('주소를 가져오는 데 실패했습니다:', error);
+      console.error("주소를 가져오는 데 실패했습니다:", error);
     }
   };
 
@@ -69,14 +72,16 @@ export default function HomeScreen() {
       // 현재 위치 가져오기
       try {
         const { coords } = await Location.getCurrentPositionAsync({});
-        console.log('Current location fetched:', coords);
+        console.log("Current location fetched:", coords);
         setLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
         });
         getAddress(coords.latitude, coords.longitude);
+        // 초기 로드 시 주변 신고 내용도 가져오기
+        await loadNearEvents(coords.latitude, coords.longitude);
       } catch (error) {
-        console.error('위치 정보를 가져오는 데 실패했습니다:', error);
+        console.error("위치 정보를 가져오는 데 실패했습니다:", error);
       }
     };
 
@@ -97,21 +102,49 @@ export default function HomeScreen() {
         mapRef.current.recenter(newLocation.latitude, newLocation.longitude);
       }
     } catch (error) {
-      console.error('현재 위치를 가져오는 데 실패했습니다:', error);
+      console.error("현재 위치를 가져오는 데 실패했습니다:", error);
     }
   };
 
   const [dongName, setDongName] = useState("");
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([
+    "🚗 교통",
+    "🌪️ 자연 재해",
+    "🔥 화재/폭발",
+    "🏗️ 시설/인프라",
+    "🚓 범죄/치안",
+    "⚙️ 기타/특수",
+  ]);
 
-  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+  const handleCenterChangeCoordinates = async (coords: {
+    latitude: number;
+    longitude: number;
+  }) => {
     getAddress(coords.latitude, coords.longitude);
+    // 지도 중심이 변경될 때마다 주변 신고 내용 로드
+    await loadNearEvents(coords.latitude, coords.longitude);
   };
 
-  const handleMarkerPress = async () => {
+  // 주변 신고 내용 로드 함수
+  const loadNearEvents = async (lat: number, lon: number) => {
     try {
-      const detail = await getReportDetail("1"); // 더미 ID
+      const events = await getNearEventList(
+        lat,
+        lon,
+        3, // map_level
+        0 // code (전체 카테고리)
+      );
+      setNearEvents(events);
+    } catch (error) {
+      console.error("주변 신고 내용 로드 실패:", error);
+    }
+  };
+
+  const handleMarkerPress = async (reportId: string) => {
+    try {
+      const detail = await getReportDetail(reportId);
       setReportDetail(detail);
       setDetailVisible(true);
     } catch (e) {
@@ -119,22 +152,37 @@ export default function HomeScreen() {
     }
   };
 
+  // 선택된 카테고리에 따라 이벤트 필터링
+  const filteredEvents = nearEvents.filter((event) => {
+    const categoryMap: { [key: string]: string } = {
+      교통: "🚗 교통",
+      "범죄/치안": "🚓 범죄/치안",
+      "시설/인프라": "🏗️ 시설/인프라",
+      "화재/폭발": "🔥 화재/폭발",
+      "자연 재해": "🌪️ 자연 재해",
+      "기타/특수": "⚙️ 기타/특수",
+    };
+    const mappedCategory = categoryMap[event.type];
+    return mappedCategory && selectedCategories.includes(mappedCategory);
+  });
+
   return (
     <Box flex={1} position="relative">
       {/* 지도 */}
       {/* <KakaoMap onCenterChange={handleCenterChange} /> */}
       {/* 지도 (바닥 레이어) */}
       {location ? (
-        <NewKakaoMap 
+        <NewKakaoMap
           ref={mapRef}
-          latitude={location.latitude} 
-          longitude={location.longitude} 
+          latitude={location.latitude}
+          longitude={location.longitude}
+          nearEvents={filteredEvents}
           onCenterChangeCoordinates={handleCenterChangeCoordinates}
+          onMarkerClick={handleMarkerPress}
         />
       ) : (
         <Text>위치 정보를 불러오는 중...</Text>
       )}
-
 
       {/* 지도 위 패널 */}
       <Box
@@ -145,7 +193,10 @@ export default function HomeScreen() {
         width="95%"
       >
         <Box flex={1} mb={15}>
-          <MapControlPanel dongName={dongName} />
+          <MapControlPanel
+            dongName={dongName}
+            onCategoryChange={setSelectedCategories}
+          />
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>
           <Button
@@ -187,21 +238,6 @@ export default function HomeScreen() {
           </Button>
         </HStack>
       </Box>
-
-       {/* ✅ 중앙 좌측 마커 */}
-      <Pressable
-        onPress={handleMarkerPress}
-        position="absolute"
-        top="45%"
-        left="25%"
-        zIndex={20}
-      >
-        <Image
-          source={require("@/assets/images/orangeMarker.png")}
-          style={{ width: 40, height: 40 }}
-          alt="marker"
-        />
-      </Pressable>
 
       {/* ✅ 상세 뷰 (슬라이드 업) */}
       {isDetailVisible && reportDetail && (

@@ -1,5 +1,5 @@
 // app/(main)/report-incident.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   HStack,
@@ -17,7 +17,8 @@ import {
 } from "@gluestack-ui/themed";
 import { ArrowLeftIcon } from "@gluestack-ui/themed";
 import { useRouter } from "expo-router";
-import { Image as RNImage, Alert } from "react-native";
+import { Image as RNImage, Alert, StyleSheet } from "react-native";
+import { SvgUri } from "react-native-svg";
 import * as ImagePicker from "expo-image-picker";
 import MapWrapper from "./MapWrapper";
 
@@ -28,7 +29,6 @@ import * as Location from "expo-location";
 interface MapRef {
   recenter: (lat: number, lon: number) => void;
 }
-
 
 //타입/상수
 const DangerLevel = ["낮음", "중간", "높음"];
@@ -83,9 +83,10 @@ function SelectChip({
 //메인 화면 (정적 UI)
 export default function EventAlarm() {
   const mapRef = useRef<MapRef>(null);
-  const [location, setLocation] = useState<{ 
-      latitude: number; longitude: number 
-    } | null>(null);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [address, setAddress] = useState<string | undefined>(undefined);
   const router = useRouter();
 
@@ -94,6 +95,34 @@ export default function EventAlarm() {
   const [title, setTitle] = useState<string>("");
   const [desc, setDesc] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
+  const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
+  const markerBaseUrl =
+    "https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers";
+
+  const markerTypeKey = (selectedCategory: string) => {
+    if (selectedCategory.includes("교통")) return "traffic";
+    if (selectedCategory.includes("범죄") || selectedCategory.includes("치안"))
+      return "crime";
+    if (selectedCategory.includes("시설") || selectedCategory.includes("인프라"))
+      return "infra";
+    if (selectedCategory.includes("화재") || selectedCategory.includes("폭발"))
+      return "fire";
+    if (selectedCategory.includes("자연")) return "nature";
+    return "etc";
+  };
+
+  const markerLevelKey = (selectedLevel: string) => {
+    const levelIndex = DangerLevel.findIndex((lv) => lv === selectedLevel);
+    if (levelIndex === 0) return "low";
+    if (levelIndex === 2) return "high";
+    return "mid";
+  };
+
+  const selectedMarkerUrl = useMemo(() => {
+    return `${markerBaseUrl}/${markerTypeKey(category)}_${markerLevelKey(
+      level
+    )}.svg`;
+  }, [category, level]);
 
   const getAddress = async (latitude: number, longitude: number) => {
     try {
@@ -117,37 +146,43 @@ export default function EventAlarm() {
   };
 
   useEffect(() => {
-      const getCurrentLocation = async () => {
-        // 현재 위치 가져오기
-        try {
-          const { coords } = await Location.getCurrentPositionAsync({});
-          console.log('Current location fetched:', coords);
-          setLocation({
-            latitude: coords.latitude,
-            longitude: coords.longitude,
-          });
-          getAddress(coords.latitude, coords.longitude);
-        } catch (error) {
-          console.error('위치 정보를 가져오는 데 실패했습니다:', error);
-        }
-      };
-  
-      getCurrentLocation();
-    }, []);
+    const getCurrentLocation = async () => {
+      // 현재 위치 가져오기
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        console.log("Current location fetched:", coords);
+        setLocation({
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        });
+        getAddress(coords.latitude, coords.longitude);
+      } catch (error) {
+        console.error("위치 정보를 가져오는 데 실패했습니다:", error);
+      }
+    };
 
-  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+    getCurrentLocation();
+  }, []);
+
+  const handleCenterChangeCoordinates = (coords: {
+    latitude: number;
+    longitude: number;
+  }) => {
     getAddress(coords.latitude, coords.longitude);
   };
 
   //필수항목 작성했을 때만 제출 버튼이 눌리도록!
-  const canSubmit = title.trim().length > 0 && address?.trim().length! > 0 && category.trim().length > 0 && level.trim().length > 0;
+  const canSubmit =
+    title.trim().length > 0 &&
+    address?.trim().length! > 0 &&
+    category.trim().length > 0 &&
+    level.trim().length > 0;
 
   const pickImage = async () => {
     // No permissions request is necessary for launching the image library
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images', 'videos'],
-      allowsEditing: true,
-      aspect: [4, 3],
+      mediaTypes: ["images", "videos"],
+      allowsEditing: false,
       quality: 1,
     });
 
@@ -155,6 +190,9 @@ export default function EventAlarm() {
       setImage(result.assets[0].uri);
     }
   };
+
+  const handleMapTouchStart = () => setScrollEnabled(false);
+  const handleMapTouchEnd = () => setScrollEnabled(true);
 
   return (
     <Box flex={1} bg="$white" pt={60}>
@@ -170,6 +208,8 @@ export default function EventAlarm() {
           paddingHorizontal: 20,
           paddingBottom: 120,
         }}
+        nestedScrollEnabled={true}
+        scrollEnabled={scrollEnabled}
       >
         {/* 사고 유형 */}
         {/* 제목 + 빨간 점 */}
@@ -249,24 +289,44 @@ export default function EventAlarm() {
           </HStack>
         </Box>
         <Box
-          h={170}
+          width="100%"
+          aspectRatio={1}
           borderWidth={1}
           borderColor="$coolGray200"
           borderRadius="$lg"
           mb="$3"
-          
+          position="relative"
+          overflow="hidden"
+          onTouchStart={handleMapTouchStart}
+          onTouchEnd={handleMapTouchEnd}
+          onTouchCancel={handleMapTouchEnd}
         >
           {/* <MapWrapper onAddressChange={(addr) => setAddress(addr)} /> */}
           {location ? (
-            <NewKakaoMap 
+            <NewKakaoMap
               ref={mapRef}
-              latitude={location.latitude} 
-              longitude={location.longitude} 
+              latitude={location.latitude}
+              longitude={location.longitude}
               onCenterChangeCoordinates={handleCenterChangeCoordinates}
             />
           ) : (
             <Text>위치 정보를 불러오는 중...</Text>
           )}
+          {selectedMarkerUrl ? (
+            <Box
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transform: [{ translateY: -24 }],
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <SvgUri uri={selectedMarkerUrl} width={48} height={48} />
+            </Box>
+          ) : null}
           {/* ★ 수정 */}
         </Box>
 
@@ -295,11 +355,7 @@ export default function EventAlarm() {
           <Text color="$red500"> *</Text>
         </HStack>
         <Input mb="$5">
-          <InputField
-            placeholder="예) 내가 지나가다 나무가 쓰러져 있었는데, 2층 유리를 밟음"
-            value={title}
-            onChangeText={setTitle}
-          />
+          <InputField value={title} onChangeText={setTitle} px="$3" />
         </Input>
 
         {/* 현장 이미지: 정적 UI(업로드 없음) */}
@@ -310,7 +366,8 @@ export default function EventAlarm() {
         </HStack>
         <Pressable onPress={pickImage}>
           <Box
-            h={120}
+            width="100%"
+            aspectRatio={1}
             borderWidth={1}
             borderStyle="dashed"
             borderColor="$coolGray300"
@@ -325,6 +382,7 @@ export default function EventAlarm() {
               <RNImage
                 source={{ uri: image }}
                 style={{ width: "100%", height: "100%" }}
+                resizeMode="contain"
               />
             ) : (
               <HStack justifyContent="center" alignItems="center">
