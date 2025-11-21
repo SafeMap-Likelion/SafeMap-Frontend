@@ -1,5 +1,5 @@
 // app/(main)/report-incident.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Box,
   HStack,
@@ -17,7 +17,8 @@ import {
 } from "@gluestack-ui/themed";
 import { ArrowLeftIcon } from "@gluestack-ui/themed";
 import { useRouter } from "expo-router";
-import { Image as RNImage, Alert } from "react-native";
+import { Image as RNImage, Alert, StyleSheet } from "react-native";
+import { SvgUri } from "react-native-svg";
 import * as ImagePicker from "expo-image-picker";
 import MapWrapper from "./MapWrapper";
 
@@ -94,6 +95,33 @@ export default function EventAlarm() {
   const [title, setTitle] = useState<string>("");
   const [desc, setDesc] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
+  const markerBaseUrl =
+    "https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers";
+
+  const markerTypeKey = (selectedCategory: string) => {
+    if (selectedCategory.includes("교통")) return "traffic";
+    if (selectedCategory.includes("범죄") || selectedCategory.includes("치안"))
+      return "crime";
+    if (selectedCategory.includes("시설") || selectedCategory.includes("인프라"))
+      return "infra";
+    if (selectedCategory.includes("화재") || selectedCategory.includes("폭발"))
+      return "fire";
+    if (selectedCategory.includes("자연")) return "nature";
+    return "etc";
+  };
+
+  const markerLevelKey = (selectedLevel: string) => {
+    const levelIndex = DangerLevel.findIndex((lv) => lv === selectedLevel);
+    if (levelIndex === 0) return "low";
+    if (levelIndex === 2) return "high";
+    return "mid";
+  };
+
+  const selectedMarkerUrl = useMemo(() => {
+    return `${markerBaseUrl}/${markerTypeKey(category)}_${markerLevelKey(
+      level
+    )}.svg`;
+  }, [category, level]);
 
   const getAddress = async (latitude: number, longitude: number) => {
     try {
@@ -256,11 +284,14 @@ export default function EventAlarm() {
           </HStack>
         </Box>
         <Box
-          h={170}
+          width="100%"
+          aspectRatio={1}
           borderWidth={1}
           borderColor="$coolGray200"
           borderRadius="$lg"
           mb="$3"
+          position="relative"
+          overflow="hidden"
         >
           {/* <MapWrapper onAddressChange={(addr) => setAddress(addr)} /> */}
           {location ? (
@@ -273,6 +304,21 @@ export default function EventAlarm() {
           ) : (
             <Text>위치 정보를 불러오는 중...</Text>
           )}
+          {selectedMarkerUrl ? (
+            <Box
+              style={[
+                StyleSheet.absoluteFillObject,
+                {
+                  justifyContent: "center",
+                  alignItems: "center",
+                  transform: [{ translateY: -24 }],
+                },
+              ]}
+              pointerEvents="none"
+            >
+              <SvgUri uri={selectedMarkerUrl} width={48} height={48} />
+            </Box>
+          ) : null}
           {/* ★ 수정 */}
         </Box>
 
