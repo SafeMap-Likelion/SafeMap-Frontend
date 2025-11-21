@@ -201,7 +201,7 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
                     position: position,
                     content: content,
                     xAnchor: 0.5,
-                    yAnchor: 0.5,
+                    yAnchor: 1.0,
                   });
 
                   marker.setMap(map);
