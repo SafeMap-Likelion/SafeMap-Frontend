@@ -107,26 +107,26 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
               3: 'high'
             };
 
-            // SVG 마커를 data URI로 임베드 (간단한 색상 원형 마커)
+            // GitHub에서 SVG 마커 가져오기
             const markerSvgs = {
-              'traffic_low': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23929292" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">교통</text></svg>'),
-              'traffic_mid': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FFA500" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">교통</text></svg>'),
-              'traffic_high': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FF0000" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">교통</text></svg>'),
-              'crime_low': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23929292" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">범죄</text></svg>'),
-              'crime_mid': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FFA500" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">범죄</text></svg>'),
-              'crime_high': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FF0000" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">범죄</text></svg>'),
-              'infra_low': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23929292" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="10" fill="white" text-anchor="middle">시설</text></svg>'),
-              'infra_mid': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FFA500" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="10" fill="white" text-anchor="middle">시설</text></svg>'),
-              'infra_high': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FF0000" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="10" fill="white" text-anchor="middle">시설</text></svg>'),
-              'fire_low': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23929292" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">화재</text></svg>'),
-              'fire_mid': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FFA500" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">화재</text></svg>'),
-              'fire_high': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FF0000" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">화재</text></svg>'),
-              'nature_low': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23929292" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="10" fill="white" text-anchor="middle">자연</text></svg>'),
-              'nature_mid': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FFA500" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="10" fill="white" text-anchor="middle">자연</text></svg>'),
-              'nature_high': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FF0000" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="10" fill="white" text-anchor="middle">자연</text></svg>'),
-              'etc_low': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23929292" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">기타</text></svg>'),
-              'etc_mid': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FFA500" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">기타</text></svg>'),
-              'etc_high': 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent('<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="15" fill="%23FF0000" stroke="white" stroke-width="2"/><text x="20" y="25" font-size="12" fill="white" text-anchor="middle">기타</text></svg>')
+              'traffic_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/traffic_low.svg',
+              'traffic_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/traffic_mid.svg',
+              'traffic_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/traffic_high.svg',
+              'crime_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/crime_low.svg',
+              'crime_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/crime_mid.svg',
+              'crime_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/crime_high.svg',
+              'infra_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/infra_low.svg',
+              'infra_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/infra_mid.svg',
+              'infra_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/infra_high.svg',
+              'fire_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/fire_low.svg',
+              'fire_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/fire_mid.svg',
+              'fire_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/fire_high.svg',
+              'nature_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/nature_low.svg',
+              'nature_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/nature_mid.svg',
+              'nature_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/nature_high.svg',
+              'etc_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/etc_low.svg',
+              'etc_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/etc_mid.svg',
+              'etc_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/etc_high.svg'
             };
 
             function initializeMap() {
