@@ -14,9 +14,9 @@ import NewKakaoMap from "@/components/NewKakaoMap";
 import MapControlPanel from "./components/MapControlPanel";
 import MyLocationButton from "./components/MyLocationButton";
 import Geolocation from "@/components/Geolocation";
-import { getReportDetail } from "@/api/apis";
+import { getReportDetail, getNearEventList } from "@/api/apis";
 import PostDetailViewScreen from "@/features/post/PostDetailViewScreen";
-import { ReportDetail } from "@/api/types";
+import { ReportDetail, NearEvent } from "@/api/types";
 
 import * as Location from "expo-location";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -27,10 +27,12 @@ interface MapRef {
 }
 
 export default function HomeScreen() {
-  const [location, setLocation] = useState<{ 
-    latitude: number; longitude: number 
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
   } | null>(null);
   const [address, setAddress] = useState<string | undefined>(undefined);
+  const [nearEvents, setNearEvents] = useState<NearEvent[]>([]);
   const router = useRouter();
 
   const mapRef = useRef<MapRef>(null);
@@ -51,16 +53,17 @@ export default function HomeScreen() {
         const fetchedAddress = doc.address.address_name;
         setAddress(fetchedAddress);
 
-        const dong = (doc.road_address && doc.road_address.region_3depth_h_name) || 
-                     (doc.address && doc.address.region_3depth_h_name) ||
-                     (doc.road_address && doc.road_address.region_3depth_name) ||
-                     (doc.address && doc.address.region_3depth_name);
+        const dong =
+          (doc.road_address && doc.road_address.region_3depth_h_name) ||
+          (doc.address && doc.address.region_3depth_h_name) ||
+          (doc.road_address && doc.road_address.region_3depth_name) ||
+          (doc.address && doc.address.region_3depth_name);
         if (dong) {
-            setDongName(dong);
+          setDongName(dong);
         }
       }
     } catch (error) {
-      console.error('주소를 가져오는 데 실패했습니다:', error);
+      console.error("주소를 가져오는 데 실패했습니다:", error);
     }
   };
 
@@ -69,14 +72,16 @@ export default function HomeScreen() {
       // 현재 위치 가져오기
       try {
         const { coords } = await Location.getCurrentPositionAsync({});
-        console.log('Current location fetched:', coords);
+        console.log("Current location fetched:", coords);
         setLocation({
           latitude: coords.latitude,
           longitude: coords.longitude,
         });
         getAddress(coords.latitude, coords.longitude);
+        // 초기 로드 시 주변 신고 내용도 가져오기
+        await loadNearEvents(coords.latitude, coords.longitude);
       } catch (error) {
-        console.error('위치 정보를 가져오는 데 실패했습니다:', error);
+        console.error("위치 정보를 가져오는 데 실패했습니다:", error);
       }
     };
 
@@ -97,7 +102,7 @@ export default function HomeScreen() {
         mapRef.current.recenter(newLocation.latitude, newLocation.longitude);
       }
     } catch (error) {
-      console.error('현재 위치를 가져오는 데 실패했습니다:', error);
+      console.error("현재 위치를 가져오는 데 실패했습니다:", error);
     }
   };
 
@@ -105,8 +110,28 @@ export default function HomeScreen() {
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
 
-  const handleCenterChangeCoordinates = (coords: { latitude: number; longitude: number }) => {
+  const handleCenterChangeCoordinates = async (coords: {
+    latitude: number;
+    longitude: number;
+  }) => {
     getAddress(coords.latitude, coords.longitude);
+    // 지도 중심이 변경될 때마다 주변 신고 내용 로드
+    await loadNearEvents(coords.latitude, coords.longitude);
+  };
+
+  // 주변 신고 내용 로드 함수
+  const loadNearEvents = async (lat: number, lon: number) => {
+    try {
+      const events = await getNearEventList(
+        lat,
+        lon,
+        3, // map_level
+        0 // code (전체 카테고리)
+      );
+      setNearEvents(events);
+    } catch (error) {
+      console.error("주변 신고 내용 로드 실패:", error);
+    }
   };
 
   const handleMarkerPress = async () => {
@@ -125,16 +150,16 @@ export default function HomeScreen() {
       {/* <KakaoMap onCenterChange={handleCenterChange} /> */}
       {/* 지도 (바닥 레이어) */}
       {location ? (
-        <NewKakaoMap 
+        <NewKakaoMap
           ref={mapRef}
-          latitude={location.latitude} 
-          longitude={location.longitude} 
+          latitude={location.latitude}
+          longitude={location.longitude}
+          nearEvents={nearEvents}
           onCenterChangeCoordinates={handleCenterChangeCoordinates}
         />
       ) : (
         <Text>위치 정보를 불러오는 중...</Text>
       )}
-
 
       {/* 지도 위 패널 */}
       <Box
@@ -188,7 +213,7 @@ export default function HomeScreen() {
         </HStack>
       </Box>
 
-       {/* ✅ 중앙 좌측 마커 */}
+      {/* ✅ 중앙 좌측 마커 */}
       <Pressable
         onPress={handleMarkerPress}
         position="absolute"
