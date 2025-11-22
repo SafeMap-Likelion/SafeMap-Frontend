@@ -9,6 +9,12 @@ import {
 } from "@gluestack-ui/themed";
 import { useRouter } from "expo-router";
 
+const newsImages: { [key: string]: any } = {
+  "dog.jpg": require("@/dummy/dummy_newsphotos/dog.jpg"),
+  "kitten.jpg": require("@/dummy/dummy_newsphotos/kitten.jpg"),
+  "llama.jpg": require("@/dummy/dummy_newsphotos/llama.jpg"),
+};
+
 export default function NewsCard({ item }: any) {
   const router = useRouter();
 
@@ -16,7 +22,7 @@ export default function NewsCard({ item }: any) {
     // 뉴스 세부 페이지로 이동
     router.push({
       pathname: "/(main)/news-detail",
-      params: { id: item.id },
+      params: { id: item.news_id },
     });
   };
 
@@ -37,7 +43,7 @@ export default function NewsCard({ item }: any) {
       >
         <VStack flex={1}>
           <Text fontFamily="Pretendard" fontSize={11} color="$textDark600">
-            {item.source}
+            {item.press}
           </Text>
           <Text
             fontFamily="Pretendard"
@@ -50,12 +56,16 @@ export default function NewsCard({ item }: any) {
             {item.title}
           </Text>
           <Text fontFamily="Pretendard" fontSize={11} color="$textDark600">
-            {item.date}
+            {new Date(item.uploaded_at).toLocaleDateString("ko-KR", {
+              year: "numeric",
+              month: "numeric",
+              day: "numeric",
+            })}
           </Text>
         </VStack>
         <Box ml="$3">
           <Image
-            source={{ uri: item.image }}
+            source={newsImages[item.photo]}
             alt="thumbnail"
             width={91}
             height={68}
