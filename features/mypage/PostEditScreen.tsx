@@ -145,17 +145,27 @@ export default function PostEditScreen() {
               flexWrap: "wrap",
             }}
           >
-            {DangerLevel.map((lv) => (
-              <Box key={lv} mr="$2" mb="$2">
-                <SelectChip
-                  bg={(selected) => (selected ? "#FF7A05" : "white")}
-                  txt={(selected) => (selected ? "#fff" : "#334155")}
-                  label={lv}
-                  selected={level === lv}
-                  onPress={() => setLevel(lv)}
-                />
-              </Box>
-            ))}
+            {DangerLevel.map((lv) => {
+              // 위험도에 따른 색상 설정
+              const getLevelColor = (level: string) => {
+                if (level === "낮음") return "#929292";
+                if (level === "중간") return "#FF7A05";
+                if (level === "높음") return "#FF1212";
+                return "#FF7A05";
+              };
+
+              return (
+                <Box key={lv} mr="$2" mb="$2">
+                  <SelectChip
+                    bg={(selected) => (selected ? getLevelColor(lv) : "white")}
+                    txt={(selected) => (selected ? "#fff" : "#334155")}
+                    label={lv}
+                    selected={level === lv}
+                    onPress={() => setLevel(lv)}
+                  />
+                </Box>
+              );
+            })}
           </HStack>
         </Box>
 
