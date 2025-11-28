@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getClerkInstance } from "@clerk/clerk-expo";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
-// const API_BASE_URL = "localhost:8000/";
+// const API_BASE_URL = "http://192.168.0.17:8000/";
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,

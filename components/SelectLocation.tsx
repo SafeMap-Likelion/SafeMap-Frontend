@@ -113,14 +113,6 @@ export default function SelectLocation({
                 control={control}
                 name="search"
                 render={({ field: { onChange, onBlur, value } }) => {
-                  const hasUserValue = (value ?? "").length > 0;
-                  const displayValue =
-                    hasUserValue || isUserTyping
-                      ? value
-                      : dongName && dongName.length > 0
-                      ? dongName
-                      : "";
-
                   return (
                     <InputField
                       h="100%"
@@ -131,7 +123,7 @@ export default function SelectLocation({
                       placeholder={dongName || placeholder}
                       placeholderTextColor="#999"
                       color="#565656"
-                      value={displayValue}
+                      value={value}
                       onChangeText={(text) => {
                         setIsUserTyping(true);
                         onChange(text);

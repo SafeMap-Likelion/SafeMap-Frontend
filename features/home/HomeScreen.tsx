@@ -139,6 +139,7 @@ export default function HomeScreen() {
       setNearEvents(events);
     } catch (error) {
       console.error("주변 신고 내용 로드 실패:", error);
+      setNearEvents([]); // 오류 시 빈 배열로 설정
     }
   };
 
