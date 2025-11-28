@@ -19,6 +19,10 @@ export type NearEvent = {
   report_id: string;
 };
 
+export type NearEvents = {
+  results: NearEvent[];
+};
+
 export type NewsId = {
   news_id: string;
 };
