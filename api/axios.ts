@@ -1,8 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { getClerkInstance } from "@clerk/clerk-expo";
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://api.safemap.com/";
-
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL;
+// const API_BASE_URL = "localhost:8000/";
 export const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -12,13 +12,16 @@ const fetchClerkToken = async (): Promise<string | undefined> => {
   try {
     const clerk = getClerkInstance();
 
-    // Expo-CLERK 공식 권장: 세션 준비인지 체크
+    // Expo-Clerk 권장
     if (!clerk.loaded) {
       await clerk.load();
     }
 
-    const token = await clerk.session?.getToken();
-    return token ?? undefined;
+    const session = clerk.session;
+    if (!session) return undefined;
+
+    const sessionToken = await session.getToken();
+    return sessionToken ?? undefined;
   } catch (e) {
     console.warn("fetchClerkToken error", e);
     return undefined;
@@ -29,9 +32,11 @@ const fetchClerkToken = async (): Promise<string | undefined> => {
 api.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await fetchClerkToken();
+    console.log("Clerk Token:", token);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log("Request Config:", config);
     return config;
   },
   (error: AxiosError) => {

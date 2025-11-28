@@ -30,12 +30,34 @@ export function SignUp({ onSignInPress }: { onSignInPress: () => void }) {
         emailAddress,
         password,
       });
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_code",
+      });
       setPendingVerification(true);
     } catch (err) {
       console.error(JSON.stringify(err, null, 2));
     }
   };
+
+  // const onSignUpPress = async () => {
+  //   if (!isLoaded) return;
+
+  //   try {
+  //     // 1) 계정 생성 요청
+  //     const result = await signUp.create({
+  //       emailAddress,
+  //       password,
+  //     });
+
+  //     // 2) 이메일 인증 단계 자동 트리거됨 (email_code)
+  //     // prepareEmailAddressVerification 제거!
+
+  //     // 3) 이제 인증 코드 입력 단계로 진행
+  //     setPendingVerification(true);
+  //   } catch (err) {
+  //     console.error("Sign-up error:", JSON.stringify(err, null, 2));
+  //   }
+  // };
 
   // 이메일 인증 처리
   const onVerifyPress = async () => {

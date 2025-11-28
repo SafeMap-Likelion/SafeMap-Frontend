@@ -9,6 +9,7 @@ import report_id_dummy from "../dummy/report_id_dummy.json";
 import favorite_region_ids_dummy from "../dummy/favorite_region_ids_dummy.json";
 import user_info from "../dummy/user_info_dummy.json";
 import autocomplete_dummy from "../dummy/autocomplete_dummy.json";
+import { api } from "./axios";
 
 import {
   DangerZone,
@@ -34,14 +35,19 @@ import {
 export async function getLocationSearch(
   query: string
 ): Promise<LocationSearchResult[]> {
-  const URL = `/api/maps/loc_search/?query=${query}`;
-  const locationSearchResults: LocationSearchResult[] = autocomplete_dummy;
-
   if (!query) {
     return [];
   }
 
-  return locationSearchResults.filter((item) => item.result.includes(query));
+  const URL = `api/maps/loc_search/?location=${query}`;
+
+  try {
+    const response = await api.get<LocationSearchResult[]>(URL);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch location search:", error);
+    return [];
+  }
 }
 
 // dangerzone 정보 가져오기 api
