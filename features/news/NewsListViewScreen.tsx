@@ -6,8 +6,11 @@ import InfoBubble from "./components/InfoBubble";
 import NewsCard from "./components/NewsCard";
 import { getNewsList } from "@/api/apis";
 import { NewsAbstract } from "@/api/types";
+import { useLocalSearchParams } from "expo-router";
 
 export default function NewsScreen() {
+  const params = useLocalSearchParams();
+  const dongName = (params.dongName as string) || "봉천동";
   const [newsData, setNewsData] = useState<NewsAbstract[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,8 +33,8 @@ export default function NewsScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
       <Box flex={1} bg="$white">
-        <Header title="'봉천동' 뉴스" />
-        <InfoBubble location="봉천동" />
+        <Header title={`'${dongName}' 뉴스`} />
+        <InfoBubble location={dongName} />
         <ScrollView
           mt={5}
           mx={5}
