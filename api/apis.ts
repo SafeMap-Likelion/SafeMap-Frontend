@@ -99,11 +99,18 @@ export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
   return newsDetail;
 }
 
-// 신고 생성 api
+// 신고 생성 api (연결 완료)
 export async function postReport(body: ReportCreate): Promise<ReportId> {
   const URL = `/api/reports/`;
-  const reportId: ReportId = report_id_dummy;
-  return reportId;
+  console.log("postReport - Request Body:", JSON.stringify(body, null, 2));
+  try {
+    const response = await api.post<ReportId>(URL, body);
+    console.log("postReport - Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to create report:", error);
+    throw error;
+  }
 }
 
 // 특정 구역 신고 목록 가져오기 api
@@ -122,13 +129,19 @@ export async function getReportList(
   return reportList;
 }
 
-// 특정 신고 세부 정보 가져오기 api
+// 특정 신고 세부 정보 가져오기 api (연결 완료)
 export async function getReportDetail(
   report_id: string
 ): Promise<ReportDetail> {
   const URL = `/api/reports/${report_id}/`;
-  const reportDetail: ReportDetail = report_detail_dummy;
-  return reportDetail;
+  try {
+    const response = await api.get<ReportDetail>(URL);
+    console.log("getReportDetail - Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch report detail:", error);
+    throw error;
+  }
 }
 
 // 특정 신고 수정 api (put)

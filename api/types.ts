@@ -63,8 +63,7 @@ export type ReportCreate = {
   addr_b: string;
   addr_c: string;
   addr_d: string;
-  state: string;
-  photos: Photo[];
+  photos: string[];
 };
 
 export type ReportId = {
