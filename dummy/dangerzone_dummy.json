@@ -1,0 +1,62 @@
+[
+  {
+    "dz_id": "7c91e5d8-0ff1-4e94-8b5a-5293b24e4b93",
+    "latitude": "37.4824",
+    "longitude": "126.9520",
+    "radius": 150,
+    "addr_a": "서울특별시",
+    "addr_b": "관악구",
+    "addr_c": "봉천동",
+    "addr_d": "00길 교차로 주변",
+    "start_time": "2025-01-12T09:30:00Z",
+    "end_time": "2025-01-12T13:00:00Z"
+  },
+  {
+    "dz_id": "c1d05c2b-264d-4df8-931c-eba67611953b",
+    "latitude": "37.4851",
+    "longitude": "126.9299",
+    "radius": 300,
+    "addr_a": "서울특별시",
+    "addr_b": "관악구",
+    "addr_c": "신림동",
+    "addr_d": "신림사거리 인근 보행 밀집 구역",
+    "start_time": "2025-01-15T18:00:00Z",
+    "end_time": "2025-01-15T23:00:00Z"
+  },
+  {
+    "dz_id": "f843eaf1-3282-4f8d-a6b1-0c2ce96a6298",
+    "latitude": "37.4705",
+    "longitude": "126.9619",
+    "radius": 220,
+    "addr_a": "서울특별시",
+    "addr_b": "관악구",
+    "addr_c": "낙성대동",
+    "addr_d": "낙성대공원 북문 주차장 주변",
+    "start_time": "2025-01-10T07:00:00Z",
+    "end_time": "2025-01-10T19:00:00Z"
+  },
+  {
+    "dz_id": "d7207c7a-202a-4d50-a1b0-a6c2bf2b7dbb",
+    "latitude": "37.4768",
+    "longitude": "126.9555",
+    "radius": 400,
+    "addr_a": "서울특별시",
+    "addr_b": "관악구",
+    "addr_c": "인헌동",
+    "addr_d": "인헌중학교 주변 통학로",
+    "start_time": "2025-01-09T06:30:00Z",
+    "end_time": "2025-01-09T09:00:00Z"
+  },
+  {
+    "dz_id": "a8f2b9c5-3d4e-4f5a-8b6c-7d8e9f0a1b2c",
+    "latitude": "37.46354235",
+    "longitude": "126.95821689",
+    "radius": 50,
+    "addr_a": "서울특별시",
+    "addr_b": "관악구",
+    "addr_c": "신림동",
+    "addr_d": "관악사 아고리움 주변",
+    "start_time": "2025-12-18T06:30:00Z",
+    "end_time": "2026-01-09T09:00:00Z"
+  }
+]

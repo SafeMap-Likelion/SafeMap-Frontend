@@ -1,0 +1,529 @@
+// app/(main)/report-incident.tsx
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import {
+  Box,
+  HStack,
+  Text,
+  Heading,
+  Pressable,
+  ScrollView,
+  Input,
+  InputField,
+  Textarea,
+  TextareaInput,
+  Button,
+  ButtonText,
+  Icon,
+} from "@gluestack-ui/themed";
+import { ArrowLeftIcon } from "@gluestack-ui/themed";
+import { useRouter } from "expo-router";
+import {
+  Image as RNImage,
+  Alert,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { SvgUri } from "react-native-svg";
+import * as ImagePicker from "expo-image-picker";
+import MapWrapper from "./MapWrapper";
+import { postReport } from "@/api/apis";
+import { ReportCreate } from "@/api/types";
+
+import NewKakaoMap from "./NewKakaoMap";
+import * as Location from "expo-location";
+
+// NewKakaoMap 컴포넌트의 ref 타입을 정의합니다.
+interface MapRef {
+  recenter: (lat: number, lon: number) => void;
+}
+
+//타입/상수
+const DangerLevel = ["낮음", "중간", "높음"];
+const CATEGORIES = [
+  "🚗 교통",
+  "🌪️ 자연 재해",
+  "🔥 화재/폭발",
+  "🏗️ 시설/인프라",
+  "🚓 범죄/치안",
+  "⚙️ 기타/특수",
+];
+
+// 정적 지도 대체 이미지
+// const MAP_PLACEHOLDER =
+//   "https://images.unsplash.com/photo-1526775417991-3f88f10405ff?q=80&w=1200&auto=format&fit=crop";
+
+//작은 컴포넌트들
+function SelectChip({
+  label,
+  selected = false,
+  onPress,
+  bg,
+  txt,
+}: {
+  label: string;
+  selected?: boolean;
+  onPress?: () => void;
+  bg?: string | ((selected: boolean) => string);
+  txt?: string | ((selected: boolean) => string);
+}) {
+  // bg, txt가 함수면 selected에 따라 동적으로 결정, 아니면 값 그대로 사용
+  const background =
+    typeof bg === "function"
+      ? bg(selected)
+      : (bg ?? (selected ? "#2563eb" : "#f1f5f9"));
+  const text =
+    typeof txt === "function"
+      ? txt(selected)
+      : (txt ?? (selected ? "#fff" : "#334155"));
+
+  return (
+    <Pressable onPress={onPress} hitSlop={8}>
+      <Box borderRadius="$full" px="$3.5" py="$2" bg={background}>
+        <Text color={text} fontWeight="$semibold" fontSize="$sm">
+          {label}
+        </Text>
+      </Box>
+    </Pressable>
+  );
+}
+
+//메인 화면 (정적 UI)
+export default function EventAlarm() {
+  const mapRef = useRef<MapRef>(null);
+  const [location, setLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [mapCenter, setMapCenter] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
+  const [address, setAddress] = useState<string | undefined>(undefined);
+  const router = useRouter();
+
+  const [category, setCategory] = useState<string>("🏗️ 시설/인프라");
+  const [level, setLevel] = useState<string>("중간");
+  const [title, setTitle] = useState<string>("");
+  const [desc, setDesc] = useState<string>("");
+  const [image, setImage] = useState<string | null>(null);
+  const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
+  const markerBaseUrl =
+    "https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers";
+
+  const markerTypeKey = (selectedCategory: string) => {
+    if (selectedCategory.includes("교통")) return "traffic";
+    if (selectedCategory.includes("범죄") || selectedCategory.includes("치안"))
+      return "crime";
+    if (
+      selectedCategory.includes("시설") ||
+      selectedCategory.includes("인프라")
+    )
+      return "infra";
+    if (selectedCategory.includes("화재") || selectedCategory.includes("폭발"))
+      return "fire";
+    if (selectedCategory.includes("자연")) return "nature";
+    return "etc";
+  };
+
+  const markerLevelKey = (selectedLevel: string) => {
+    const levelIndex = DangerLevel.findIndex((lv) => lv === selectedLevel);
+    if (levelIndex === 0) return "low";
+    if (levelIndex === 2) return "high";
+    return "mid";
+  };
+
+  const selectedMarkerUrl = useMemo(() => {
+    return `${markerBaseUrl}/${markerTypeKey(category)}_${markerLevelKey(
+      level
+    )}.svg`;
+  }, [category, level]);
+
+  const getAddress = async (latitude: number, longitude: number) => {
+    try {
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.documents && data.documents.length > 0) {
+        const doc = data.documents[0];
+        const fetchedAddress = doc.road_address.address_name;
+        setAddress(fetchedAddress);
+      }
+    } catch (error) {
+      // console.error('주소를 가져오는 데 실패했습니다:', error);
+    }
+  };
+
+  useEffect(() => {
+    const getCurrentLocation = async () => {
+      // 현재 위치 가져오기
+      try {
+        const { coords } = await Location.getCurrentPositionAsync({});
+        console.log("Current location fetched:", coords);
+        const currentLocation = {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        };
+        setLocation(currentLocation);
+        setMapCenter(currentLocation); // 초기 지도 중심도 현재 위치로 설정
+        getAddress(coords.latitude, coords.longitude);
+      } catch (error) {
+        console.error("위치 정보를 가져오는 데 실패했습니다:", error);
+      }
+    };
+
+    getCurrentLocation();
+  }, []);
+
+  const handleCenterChangeCoordinates = (coords: {
+    latitude: number;
+    longitude: number;
+  }) => {
+    // 지도 중심이 변경될 때마다 mapCenter 업데이트 (신고 위치로 사용)
+    setMapCenter(coords);
+    getAddress(coords.latitude, coords.longitude);
+  };
+
+  //필수항목 작성했을 때만 제출 버튼이 눌리도록!
+  const canSubmit =
+    title.trim().length > 0 &&
+    address?.trim().length! > 0 &&
+    category.trim().length > 0 &&
+    level.trim().length > 0;
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsEditing: false,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  const handleMapTouchStart = () => setScrollEnabled(false);
+  const handleMapTouchEnd = () => setScrollEnabled(true);
+
+  const handleSubmit = async () => {
+    if (!canSubmit || !mapCenter) return;
+
+    // 카테고리를 type으로 매핑
+    const getTypeFromCategory = (cat: string): string => {
+      if (cat.includes("교통")) return "교통";
+      if (cat.includes("범죄") || cat.includes("치안")) return "범죄/치안";
+      if (cat.includes("시설") || cat.includes("인프라")) return "시설/인프라";
+      if (cat.includes("화재") || cat.includes("폭발")) return "화재/폭발";
+      if (cat.includes("자연")) return "자연 재해";
+      return "기타/특수";
+    };
+
+    // 위험도를 level로 매핑 (낮음: 1, 중간: 2, 높음: 3)
+    const getLevelFromDanger = (danger: string): number => {
+      console.log("Selected danger level:", danger);
+      if (danger === "낮음") return 1;
+      if (danger === "높음") return 3;
+      return 2;
+    };
+
+    // 주소를 파싱 (임시로 주소 전체를 addr_a에 넣고 나머지는 빈 문자열)
+    const addressParts = address?.split(" ") || [];
+    const addr_a = addressParts[0] || "";
+    const addr_b = addressParts[1] || "";
+    const addr_c = addressParts[2] || "";
+    const addr_d = addressParts.slice(3).join(" ") || "";
+
+    console.log("Report level being sent:", getLevelFromDanger(level));
+
+    const reportData: ReportCreate = {
+      latitude: mapCenter.latitude,
+      longitude: mapCenter.longitude,
+      type: getTypeFromCategory(category),
+      level: getLevelFromDanger(level),
+      title: title,
+      place: address || "",
+      description: desc,
+      addr_a: addr_a,
+      addr_b: addr_b,
+      addr_c: addr_c,
+      addr_d: addr_d,
+      photos: [], // 더미 사진 데이터
+    };
+
+    try {
+      const result = await postReport(reportData);
+      Alert.alert("성공!", `신고가 접수되었습니다.`);
+      // 성공 후 초기화
+      setCategory("🏗️ 시설/인프라");
+      setLevel("중간");
+      setTitle("");
+      setDesc("");
+      setImage(null);
+      // 홈 스크린으로 이동
+      router.replace("/(main)");
+    } catch (error) {
+      Alert.alert("오류", "신고 접수에 실패했습니다.");
+      console.error("Report submission error:", error);
+    }
+  };
+
+  return (
+    <Box flex={1} bg="$white" pt={60}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+      >
+        {/* Header */}
+        <Box px="$4" pb="$4" bg="$white">
+          <Heading size="2xl" fontWeight="$bold" textAlign="center">
+            🔈사건/사고 알리기
+          </Heading>
+        </Box>
+
+        <ScrollView
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 120,
+          }}
+          nestedScrollEnabled={true}
+          scrollEnabled={scrollEnabled}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* 사고 유형 */}
+          {/* 제목 + 빨간 점 */}
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              사고 유형
+            </Text>
+            <Text color="$red500"> *</Text>
+          </HStack>
+          {/* 연한 회색 배경 박스 안에 칩들 배치 */}
+          <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
+            <HStack
+              style={{
+                flexDirection: "row",
+                flexWrap: "wrap",
+                justifyContent: "center", // 가로기준 가운데 정렬
+              }}
+            >
+              {CATEGORIES.map((c) => (
+                <Box key={c} mr="$2" mb="$2">
+                  <SelectChip
+                    label={c}
+                    selected={category === c}
+                    onPress={() => setCategory(c)}
+                    bg={(selected) => (selected ? "#FBDADA" : "white")}
+                    txt={(selected) => (selected ? "black" : "black")}
+                  />
+                </Box>
+              ))}
+            </HStack>
+          </Box>
+
+          {/* 위험도 */}
+          {/* 제목 + 빨간 점 */}
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              위험도
+            </Text>
+            <Text color="$red500"> *</Text>
+          </HStack>
+          <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
+            <HStack
+              style={{
+                justifyContent: "center",
+                flexDirection: "row",
+                flexWrap: "wrap",
+              }}
+            >
+              {DangerLevel.map((lv) => {
+                // 위험도에 따른 색상 설정
+                const getLevelColor = (level: string) => {
+                  if (level === "낮음") return "#929292";
+                  if (level === "중간") return "#FF7A05";
+                  if (level === "높음") return "#FF1212";
+                  return "#FF7A05";
+                };
+
+                return (
+                  <Box key={lv} mr="$2" mb="$2">
+                    <SelectChip
+                      bg={(selected) =>
+                        selected ? getLevelColor(lv) : "white"
+                      }
+                      txt={(selected) => (selected ? "#fff" : "#334155")}
+                      label={lv}
+                      selected={level === lv}
+                      onPress={() => setLevel(lv)}
+                    />
+                  </Box>
+                );
+              })}
+            </HStack>
+          </Box>
+
+          {/* 지도 표시 위치: 정적 이미지로 대체 */}
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              지도 표시 위치
+            </Text>
+            <Text color="$coolGray800" fontSize={10}>
+              *현재 위치로 자동 입력됩니다.
+            </Text>
+          </HStack>
+          <Box bg="$coolGray50" borderRadius="$xl" p="$3" mb="$5">
+            <HStack style={{ justifyContent: "center" }}>
+              <Text color="$coolGray800" fontWeight="$semibold">
+                {address ? address : "지도에서 위치를 선택하세요."}
+              </Text>
+            </HStack>
+          </Box>
+          <Box
+            width="100%"
+            aspectRatio={1}
+            borderWidth={1}
+            borderColor="$coolGray200"
+            borderRadius="$lg"
+            mb="$3"
+            position="relative"
+            overflow="hidden"
+            onTouchStart={handleMapTouchStart}
+            onTouchEnd={handleMapTouchEnd}
+            onTouchCancel={handleMapTouchEnd}
+          >
+            {/* <MapWrapper onAddressChange={(addr) => setAddress(addr)} /> */}
+            {location ? (
+              <NewKakaoMap
+                ref={mapRef}
+                latitude={location.latitude}
+                longitude={location.longitude}
+                onCenterChangeCoordinates={handleCenterChangeCoordinates}
+              />
+            ) : (
+              <Text>위치 정보를 불러오는 중...</Text>
+            )}
+            {selectedMarkerUrl ? (
+              <Box
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    justifyContent: "center",
+                    alignItems: "center",
+                    transform: [{ translateY: -24 }],
+                  },
+                ]}
+                pointerEvents="none"
+              >
+                <SvgUri uri={selectedMarkerUrl} width={48} height={48} />
+              </Box>
+            ) : null}
+            {/* ★ 수정 */}
+          </Box>
+
+          {/* 사고 위치(주소 텍스트) */}
+
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              사고 위치
+            </Text>
+            <Text color="$red500"> *</Text>
+          </HStack>
+          <Input mb="$5">
+            <InputField
+              placeholder="사건 위치를 입력해주세요"
+              value={address}
+              onChangeText={setAddress}
+            />
+          </Input>
+
+          {/* 제목 */}
+
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              제목
+            </Text>
+            <Text color="$red500"> *</Text>
+          </HStack>
+          <Input mb="$5">
+            <InputField value={title} onChangeText={setTitle} px="$3" />
+          </Input>
+
+          {/* 현장 이미지: 정적 UI(업로드 없음) */}
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              현장 이미지
+            </Text>
+          </HStack>
+          <Pressable onPress={pickImage}>
+            <Box
+              width="100%"
+              aspectRatio={1}
+              borderWidth={1}
+              borderStyle="dashed"
+              borderColor="$coolGray300"
+              borderRadius="$lg"
+              mb="$5"
+              alignItems="center"
+              justifyContent="center"
+              bg="$coolGray50"
+              overflow="hidden"
+            >
+              {image ? (
+                <RNImage
+                  source={{ uri: image }}
+                  style={{ width: "100%", height: "100%" }}
+                  resizeMode="contain"
+                />
+              ) : (
+                <HStack justifyContent="center" alignItems="center">
+                  <Text color="$coolGray500">이미지 추가</Text>
+                </HStack>
+              )}
+            </Box>
+          </Pressable>
+
+          {/* 설명 */}
+
+          <HStack mb="$2">
+            <Text color="$coolGray800" fontWeight="$semibold" fontSize={18}>
+              설명
+            </Text>
+          </HStack>
+          <Textarea mb="$6">
+            <TextareaInput
+              placeholder="상황을 더 자세히 적어주세요"
+              value={desc}
+              onChangeText={setDesc}
+              multiline
+            />
+          </Textarea>
+
+          {/* 제출 버튼 */}
+          <HStack mb="$3" justifyContent="center">
+            <Button
+              bg="$blue600"
+              width="40%"
+              borderRadius={15}
+              opacity={canSubmit ? 1 : 0.5}
+              disabled={!canSubmit}
+              onPress={handleSubmit}
+            >
+              <ButtonText color="$white" fontWeight="$bold">
+                사건 알리기
+              </ButtonText>
+            </Button>
+          </HStack>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Box>
+  );
+}

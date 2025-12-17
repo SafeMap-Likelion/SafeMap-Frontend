@@ -1,0 +1,24 @@
+{
+  "username": "hyukjun",
+  "sns": "todd4@snu.ac.kr",
+  "favorite_regions": [
+    {
+      "type": "집",
+      "addr_a": "서울특별시",
+      "addr_b": "관악구",
+      "addr_c": "봉천동"
+    },
+    {
+      "type": "학교",
+      "addr_a": "서울특별시",
+      "addr_b": "관악구",
+      "addr_c": "신림동"
+    },
+    {
+      "type": "직장",
+      "addr_a": "서울특별시",
+      "addr_b": "관악구",
+      "addr_c": "남현동"
+    }
+  ]
+}

@@ -2,16 +2,17 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    "baseUrl": ".", // 기준 경로
     "paths": {
-      "@/*": [
-        "./*"
-      ]
+      "@/*": ["./*"], // 최상위 전체
+      "@api/*": ["api/*"], // api 전용
+      "@hooks/*": ["hooks/*"], // hooks 전용
+      "@stores/*": ["stores/*"], // zustand 전역 상태
+      "@features/*": ["features/*"],
+      "@components/*": ["components/*"],
+      "@constants/*": ["constants/*"],
+      "@lib/*": ["lib/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

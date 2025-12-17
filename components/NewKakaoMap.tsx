@@ -1,0 +1,371 @@
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useEffect,
+  useMemo,
+} from "react";
+import { View, StyleSheet } from "react-native";
+import { WebView } from "react-native-webview";
+import { NearEvent } from "@/api/types";
+
+// DangerZone 타입 import
+import { DangerZone } from "@/api/types";
+
+// 컴포넌트 Props 타입 정의
+type KakaoMapProps = {
+  latitude: number;
+  longitude: number;
+  nearEvents?: NearEvent[];
+  dangerZones?: DangerZone[];
+  onCenterChangeCoordinates?: (coords: {
+    latitude: number;
+    longitude: number;
+  }) => void;
+  onMarkerClick?: (reportId: string) => void;
+};
+
+// 부모 컴포넌트에서 호출할 수 있는 함수 타입 정의
+export interface MapRef {
+  recenter: (lat: number, lon: number) => void;
+  updateUserMarker: (lat: number, lon: number) => void;
+}
+
+// forwardRef의 타입 문제를 수정한 컴포넌트 정의
+const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
+  const {
+    latitude,
+    longitude,
+    nearEvents = [],
+    dangerZones = [],
+    onCenterChangeCoordinates,
+    onMarkerClick,
+  } = props;
+  const webViewRef = useRef<WebView>(null);
+
+  // 부모 컴포넌트에서 ref를 통해 recenter 함수를 호출할 수 있도록 설정
+  useImperativeHandle(ref, () => ({
+    recenter: (lat: number, lon: number) => {
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(
+          JSON.stringify({ type: "recenter", payload: { lat, lon } })
+        );
+      }
+    },
+    updateUserMarker: (lat: number, lon: number) => {
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(
+          JSON.stringify({ type: "updateUserMarker", payload: { lat, lon } })
+        );
+      }
+    },
+  }));
+
+  // nearEvents가 변경될 때 WebView에 업데이트 메시지 전송
+  useEffect(() => {
+    if (webViewRef.current) {
+      webViewRef.current.postMessage(
+        JSON.stringify({ type: "updateMarkers", payload: nearEvents })
+      );
+    }
+  }, [nearEvents]);
+
+  // dangerZones가 변경될 때 WebView에 업데이트 메시지 전송
+  useEffect(() => {
+    if (webViewRef.current) {
+      webViewRef.current.postMessage(
+        JSON.stringify({ type: "updateDangerZones", payload: dangerZones })
+      );
+    }
+  }, [dangerZones]);
+
+  // WebView에 삽입될 HTML 및 JavaScript 코드 - latitude, longitude가 변경될 때만 재생성
+  const htmlContent = useMemo(
+    () => `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${process.env.EXPO_PUBLIC_KAKAO_MAP_JS_KEY}&libraries=services"></script>
+          <style>
+            html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+            .custom-overlay {
+              width: 20px; height: 20px; background-color: red;
+              border-radius: 50%; border: 2px solid white;
+              box-shadow: 0 0 5px red; animation: blink 1s infinite;
+            }
+            @keyframes blink {
+              0%, 100% { transform: scale(1); opacity: 1; }
+              50% { transform: scale(1.2); opacity: 0.5; }
+            }
+            .event-marker {
+              width: 40px;
+              height: 40px;
+              cursor: pointer;
+            }
+            .event-marker img {
+              width: 100%;
+              height: 100%;
+            }
+          </style>
+        </head>
+        <body>
+          <div id="map"></div>
+          <script>
+            let map = null;
+            let centerMarker = null;
+            let eventMarkers = [];
+            let dangerZoneOverlays = [];
+
+            // type 매핑
+            const typeMapping = {
+              '교통': 'traffic',
+              '범죄/치안': 'crime',
+              '시설/인프라': 'infra',
+              '화재/폭발': 'fire',
+              '자연 재해': 'nature',
+              '기타/특수': 'etc'
+            };
+
+            // level 매핑
+            const levelMapping = {
+              1: 'low',
+              2: 'mid',
+              3: 'high'
+            };
+
+            // GitHub에서 SVG 마커 가져오기
+            const markerSvgs = {
+              'traffic_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/traffic_low.svg',
+              'traffic_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/traffic_mid.svg',
+              'traffic_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/traffic_high.svg',
+              'crime_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/crime_low.svg',
+              'crime_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/crime_mid.svg',
+              'crime_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/crime_high.svg',
+              'infra_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/infra_low.svg',
+              'infra_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/infra_mid.svg',
+              'infra_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/infra_high.svg',
+              'fire_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/fire_low.svg',
+              'fire_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/fire_mid.svg',
+              'fire_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/fire_high.svg',
+              'nature_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/nature_low.svg',
+              'nature_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/nature_mid.svg',
+              'nature_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/nature_high.svg',
+              'etc_low': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/etc_low.svg',
+              'etc_mid': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/etc_mid.svg',
+              'etc_high': 'https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers/etc_high.svg'
+            };
+
+            function initializeMap() {
+              if (typeof kakao === 'undefined' || !kakao.maps) {
+                return;
+              }
+
+              const mapContainer = document.getElementById('map');
+              const mapOption = {
+                center: new kakao.maps.LatLng(${latitude}, ${longitude}),
+                level: 3,
+              };
+
+              map = new kakao.maps.Map(mapContainer, mapOption);
+
+              // 중앙 빨간 마커
+              centerMarker = new kakao.maps.CustomOverlay({
+                position: map.getCenter(),
+                content: '<div class="custom-overlay"></div>',
+                xAnchor: 0.5,
+                yAnchor: 0.5,
+              });
+              centerMarker.setMap(map);
+
+              // 초기에는 마커 없이 시작 (nearEvents는 useEffect를 통해 전달됨)
+              updateEventMarkers([]);
+
+              document.addEventListener('message', function(event) {
+                try {
+                  const message = JSON.parse(event.data);
+                  if (message.type === 'recenter' && map) {
+                    const { lat, lon } = message.payload;
+                    const moveLatLon = new kakao.maps.LatLng(lat, lon);
+                    map.setCenter(moveLatLon);
+                    centerMarker.setPosition(moveLatLon);
+                  }
+                  if (message.type === 'updateUserMarker' && map) {
+                    // 마커만 업데이트 (지도 중심은 유지)
+                    const { lat, lon } = message.payload;
+                    const newPosition = new kakao.maps.LatLng(lat, lon);
+                    centerMarker.setPosition(newPosition);
+                  }
+                  if (message.type === 'updateMarkers') {
+                    updateEventMarkers(message.payload);
+                  }
+                  if (message.type === 'updateDangerZones') {
+                    updateDangerZones(message.payload);
+                  }
+                } catch (e) {
+                  // Error handling
+                }
+              });
+
+              // 이벤트 마커 업데이트 함수
+              function updateEventMarkers(events) {
+                // 기존 마커 제거
+                eventMarkers.forEach(marker => marker.setMap(null));
+                eventMarkers = [];
+
+                // 새 마커 생성
+                events.forEach(event => {
+                  const position = new kakao.maps.LatLng(
+                    parseFloat(event.latitude),
+                    parseFloat(event.longitude)
+                  );
+
+                  // type과 level에 따라 마커 아이콘 선택
+                  const typeKey = typeMapping[event.type] || 'etc';
+                  const levelKey = levelMapping[event.level] || 'mid';
+                  const markerKey = \`\${typeKey}_\${levelKey}\`;
+                  const markerUrl = markerSvgs[markerKey];
+
+                  // DOM 요소 생성
+                  const markerDiv = document.createElement('div');
+                  markerDiv.className = 'event-marker';
+                  markerDiv.setAttribute('data-report-id', event.report_id);
+                  markerDiv.innerHTML = \`<img src="\${markerUrl}" alt="\${event.type} \${event.level}" />\`;
+
+                  // 클릭 이벤트 추가
+                  markerDiv.addEventListener('click', function() {
+                    const reportId = this.getAttribute('data-report-id');
+                    if (reportId && window.ReactNativeWebView) {
+                      window.ReactNativeWebView.postMessage(
+                        JSON.stringify({ type: 'marker_clicked', payload: { reportId: reportId } })
+                      );
+                    }
+                  });
+
+                  const marker = new kakao.maps.CustomOverlay({
+                    position: position,
+                    content: markerDiv,
+                    xAnchor: 0.5,
+                    yAnchor: 1.0,
+                  });
+
+                  marker.setMap(map);
+                  eventMarkers.push(marker);
+                });
+              }
+
+              // 위험 구역 업데이트 함수
+              function updateDangerZones(zones) {
+                // 기존 오버레이 제거
+                dangerZoneOverlays.forEach(overlay => {
+                  if (overlay.circle) overlay.circle.setMap(null);
+                  if (overlay.marker) overlay.marker.setMap(null);
+                });
+                dangerZoneOverlays = [];
+
+                // 새 위험 구역 생성
+                zones.forEach(zone => {
+                  const position = new kakao.maps.LatLng(
+                    parseFloat(zone.latitude),
+                    parseFloat(zone.longitude)
+                  );
+
+                  // 동심원 생성
+                  const circle = new kakao.maps.Circle({
+                    center: position,
+                    radius: zone.radius, // 미터 단위
+                    strokeWeight: 3,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 1,
+                    strokeStyle: 'solid',
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.2
+                  });
+
+                  // 중앙 warning 아이콘 (Material Icons SVG)
+                  const markerDiv = document.createElement('div');
+                  markerDiv.style.width = '30px';
+                  markerDiv.style.height = '30px';
+                  markerDiv.style.display = 'flex';
+                  markerDiv.style.alignItems = 'center';
+                  markerDiv.style.justifyContent = 'center';
+                  markerDiv.innerHTML = \`
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#333">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                  \`;
+
+                  const marker = new kakao.maps.CustomOverlay({
+                    position: position,
+                    content: markerDiv,
+                    xAnchor: 0.5,
+                    yAnchor: 0.5,
+                  });
+
+                  circle.setMap(map);
+                  marker.setMap(map);
+
+                  dangerZoneOverlays.push({ circle, marker });
+                });
+              }
+
+              kakao.maps.event.addListener(map, 'idle', function() {
+                const center = map.getCenter();
+                const payload = {
+                    latitude: center.getLat(),
+                    longitude: center.getLng()
+                };
+                window.ReactNativeWebView.postMessage(
+                    JSON.stringify({ type: 'center_changed', payload: payload })
+                );
+              });
+            }
+
+            if (typeof kakao !== 'undefined' && kakao.maps) {
+                kakao.maps.load(initializeMap);
+            }
+          </script>
+        </body>
+      </html>
+    `,
+    [latitude, longitude]
+  );
+
+  return (
+    <View style={styles.container}>
+      <WebView
+        ref={webViewRef}
+        originWhitelist={["*"]}
+        source={{ html: htmlContent }}
+        style={styles.webview}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        onMessage={(event) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === "center_changed" && onCenterChangeCoordinates) {
+              onCenterChangeCoordinates(data.payload);
+            }
+            if (data.type === "marker_clicked" && onMarkerClick) {
+              onMarkerClick(data.payload.reportId);
+            }
+          } catch (e) {
+            // console.error is not used to prevent Expo from showing a red screen.
+          }
+        }}
+      />
+    </View>
+  );
+});
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  webview: {
+    flex: 1,
+  },
+});
+
+export default NewKakaoMap;

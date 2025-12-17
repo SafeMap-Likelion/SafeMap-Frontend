@@ -1,0 +1,22 @@
+{
+  "id": 1,
+  "latitude": 37.4821,
+  "longitude": 126.9523,
+  "type": "교통",
+  "level": 2,
+  "title": "횡단보도에서 차량 충돌 발생",
+  "place": "서울특별시 관악구 봉천동",
+  "description": "신호등 앞 횡단보도에서 승용차와 오토바이가 충돌한 사고로 보행자 안전이 걱정되어요!",
+  "addr_a": "서울특별시",
+  "addr_b": "관악구",
+  "addr_c": "봉천동",
+  "addr_d": "00길 12-3",
+  "created_at": "2025-01-10T14:22:53Z",
+  "updated_at": "2025-01-10T15:04:11Z",
+  "state": false,
+  "photos": [
+    {
+      "photo": "https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=1200"
+    }
+  ]
+}
