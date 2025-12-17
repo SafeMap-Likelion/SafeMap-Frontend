@@ -283,14 +283,18 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
                     fillOpacity: 0.2
                   });
 
-                  // 중앙 삼각형 느낌표 아이콘
+                  // 중앙 warning 아이콘 (Material Icons SVG)
                   const markerDiv = document.createElement('div');
                   markerDiv.style.width = '30px';
                   markerDiv.style.height = '30px';
-                  markerDiv.style.fontSize = '30px';
-                  markerDiv.style.textAlign = 'center';
-                  markerDiv.style.lineHeight = '30px';
-                  markerDiv.innerHTML = '⚠️';
+                  markerDiv.style.display = 'flex';
+                  markerDiv.style.alignItems = 'center';
+                  markerDiv.style.justifyContent = 'center';
+                  markerDiv.innerHTML = \`
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#333">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                  \`;
 
                   const marker = new kakao.maps.CustomOverlay({
                     position: position,

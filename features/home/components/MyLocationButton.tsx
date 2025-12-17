@@ -21,7 +21,7 @@ const MyLocationButton: React.FC<MyLocationButtonProps> = ({ onPress }) => {
 const styles = StyleSheet.create({
   button: {
     position: "absolute",
-    bottom: 120,
+    bottom: 100,
     right: 20,
     zIndex: 10,
     width: 50,

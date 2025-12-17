@@ -493,7 +493,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   dangerButton: {
     position: "absolute",
-    bottom: 180,
+    bottom: 160,
     right: 20,
     zIndex: 20,
     width: 50,
