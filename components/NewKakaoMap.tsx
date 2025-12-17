@@ -9,11 +9,15 @@ import { View, StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
 import { NearEvent } from "@/api/types";
 
+// DangerZone 타입 import
+import { DangerZone } from "@/api/types";
+
 // 컴포넌트 Props 타입 정의
 type KakaoMapProps = {
   latitude: number;
   longitude: number;
   nearEvents?: NearEvent[];
+  dangerZones?: DangerZone[];
   onCenterChangeCoordinates?: (coords: {
     latitude: number;
     longitude: number;
@@ -24,6 +28,7 @@ type KakaoMapProps = {
 // 부모 컴포넌트에서 호출할 수 있는 함수 타입 정의
 export interface MapRef {
   recenter: (lat: number, lon: number) => void;
+  updateUserMarker: (lat: number, lon: number) => void;
 }
 
 // forwardRef의 타입 문제를 수정한 컴포넌트 정의
@@ -32,6 +37,7 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
     latitude,
     longitude,
     nearEvents = [],
+    dangerZones = [],
     onCenterChangeCoordinates,
     onMarkerClick,
   } = props;
@@ -46,6 +52,13 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
         );
       }
     },
+    updateUserMarker: (lat: number, lon: number) => {
+      if (webViewRef.current) {
+        webViewRef.current.postMessage(
+          JSON.stringify({ type: "updateUserMarker", payload: { lat, lon } })
+        );
+      }
+    },
   }));
 
   // nearEvents가 변경될 때 WebView에 업데이트 메시지 전송
@@ -56,6 +69,15 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
       );
     }
   }, [nearEvents]);
+
+  // dangerZones가 변경될 때 WebView에 업데이트 메시지 전송
+  useEffect(() => {
+    if (webViewRef.current) {
+      webViewRef.current.postMessage(
+        JSON.stringify({ type: "updateDangerZones", payload: dangerZones })
+      );
+    }
+  }, [dangerZones]);
 
   // WebView에 삽입될 HTML 및 JavaScript 코드 - latitude, longitude가 변경될 때만 재생성
   const htmlContent = useMemo(
@@ -94,6 +116,7 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
             let map = null;
             let centerMarker = null;
             let eventMarkers = [];
+            let dangerZoneOverlays = [];
 
             // type 매핑
             const typeMapping = {
@@ -168,8 +191,17 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
                     map.setCenter(moveLatLon);
                     centerMarker.setPosition(moveLatLon);
                   }
+                  if (message.type === 'updateUserMarker' && map) {
+                    // 마커만 업데이트 (지도 중심은 유지)
+                    const { lat, lon } = message.payload;
+                    const newPosition = new kakao.maps.LatLng(lat, lon);
+                    centerMarker.setPosition(newPosition);
+                  }
                   if (message.type === 'updateMarkers') {
                     updateEventMarkers(message.payload);
+                  }
+                  if (message.type === 'updateDangerZones') {
+                    updateDangerZones(message.payload);
                   }
                 } catch (e) {
                   // Error handling
@@ -220,6 +252,61 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
 
                   marker.setMap(map);
                   eventMarkers.push(marker);
+                });
+              }
+
+              // 위험 구역 업데이트 함수
+              function updateDangerZones(zones) {
+                // 기존 오버레이 제거
+                dangerZoneOverlays.forEach(overlay => {
+                  if (overlay.circle) overlay.circle.setMap(null);
+                  if (overlay.marker) overlay.marker.setMap(null);
+                });
+                dangerZoneOverlays = [];
+
+                // 새 위험 구역 생성
+                zones.forEach(zone => {
+                  const position = new kakao.maps.LatLng(
+                    parseFloat(zone.latitude),
+                    parseFloat(zone.longitude)
+                  );
+
+                  // 동심원 생성
+                  const circle = new kakao.maps.Circle({
+                    center: position,
+                    radius: zone.radius, // 미터 단위
+                    strokeWeight: 3,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 1,
+                    strokeStyle: 'solid',
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.2
+                  });
+
+                  // 중앙 warning 아이콘 (Material Icons SVG)
+                  const markerDiv = document.createElement('div');
+                  markerDiv.style.width = '30px';
+                  markerDiv.style.height = '30px';
+                  markerDiv.style.display = 'flex';
+                  markerDiv.style.alignItems = 'center';
+                  markerDiv.style.justifyContent = 'center';
+                  markerDiv.innerHTML = \`
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="#333">
+                      <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+                    </svg>
+                  \`;
+
+                  const marker = new kakao.maps.CustomOverlay({
+                    position: position,
+                    content: markerDiv,
+                    xAnchor: 0.5,
+                    yAnchor: 0.5,
+                  });
+
+                  circle.setMap(map);
+                  marker.setMap(map);
+
+                  dangerZoneOverlays.push({ circle, marker });
                 });
               }
 

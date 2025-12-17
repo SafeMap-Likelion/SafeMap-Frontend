@@ -65,6 +65,13 @@ export default function MapControlPanel({
       pb={10}
       px={10}
       rounded="$2xl"
+      shadowColor="#000"
+      shadowOpacity={0.1}
+      shadowRadius={3}
+      sx={{
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 3,
+      }}
     >
       <VStack space="xs">
         {/* 지역 선택창 */}
