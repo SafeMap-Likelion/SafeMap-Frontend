@@ -35,7 +35,7 @@ export default function NewsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <Box flex={1} bg="$white">
+      <Box flex={1} bg="$white" pt={50}>
         <Header title={`'${dongName}' 뉴스`} />
         <InfoBubble location={dongName} />
         <ScrollView

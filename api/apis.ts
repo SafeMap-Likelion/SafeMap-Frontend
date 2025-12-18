@@ -124,6 +124,7 @@ export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
 // 신고 생성 api (연결 완료)
 export async function postReport(body: ReportCreate): Promise<ReportId> {
   const URL = `/api/reports/`;
+  console.log("========== postReport 요청 시작 ==========");
   console.log("postReport - Request Body:", JSON.stringify(body, null, 2));
 
   try {
@@ -142,6 +143,20 @@ export async function postReport(body: ReportCreate): Promise<ReportId> {
     formData.append("addr_b", body.addr_b);
     formData.append("addr_c", body.addr_c);
     formData.append("addr_d", body.addr_d);
+
+    // FormData 내용 로그
+    console.log("FormData 필드:");
+    console.log("  - latitude:", body.latitude.toString());
+    console.log("  - longitude:", body.longitude.toString());
+    console.log("  - type:", body.type);
+    console.log("  - level:", body.level.toString());
+    console.log("  - title:", body.title);
+    console.log("  - place:", body.place);
+    console.log("  - description:", body.description);
+    console.log("  - addr_a:", body.addr_a);
+    console.log("  - addr_b:", body.addr_b);
+    console.log("  - addr_c:", body.addr_c);
+    console.log("  - addr_d:", body.addr_d);
 
     // 사진 파일 추가
     if (body.photos && body.photos.length > 0) {
@@ -163,7 +178,11 @@ export async function postReport(body: ReportCreate): Promise<ReportId> {
           type,
         });
       }
+    } else {
+      console.log("  - photos: 없음");
     }
+
+    console.log("========== API 호출 중... ==========");
 
     // Content-Type을 설정하지 않으면 axios가 자동으로 multipart/form-data + boundary 설정
     const response = await api.post<ReportId>(URL, formData, {
@@ -174,26 +193,37 @@ export async function postReport(body: ReportCreate): Promise<ReportId> {
     });
     console.log("postReport - Response:", response.data);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    console.error("========== postReport 에러 ==========");
     console.error("Failed to create report:", error);
+    if (error.response) {
+      console.error("에러 상태 코드:", error.response.status);
+      console.error(
+        "에러 응답 데이터:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+      console.error("에러 응답 헤더:", error.response.headers);
+    }
     throw error;
   }
 }
 
-// 특정 구역 신고 목록 가져오기 api
+// 특정 구역 신고 목록 가져오기 api (연결 완료)
 export async function getReportList(
   addr_a: string,
   addr_b: string,
   addr_c: string
 ): Promise<ReportAbstract[]> {
   const URL = `/api/reports/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
-  const params = {
-    addr_a: addr_a,
-    addr_b: addr_b,
-    addr_c: addr_c,
-  };
-  const reportList: ReportAbstract[] = report_list_dummy;
-  return reportList;
+
+  try {
+    const response = await api.get<{ reports: ReportAbstract[] }>(URL);
+    console.log("getReportList - Response:", response.data);
+    return response.data.reports ?? [];
+  } catch (error) {
+    console.error("Failed to fetch report list:", error);
+    return [];
+  }
 }
 
 // 특정 신고 세부 정보 가져오기 api (연결 완료)

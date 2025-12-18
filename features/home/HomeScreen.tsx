@@ -67,6 +67,9 @@ export default function HomeScreen() {
   );
   const dangerZonesRef = useRef<DangerZone[]>([]);
   const insideZonesRef = useRef<{ [key: string]: boolean }>({});
+  // AppState 중복 호출 방지를 위한 ref
+  const appStateRef = useRef<string>(AppState.currentState);
+  const isBackgroundTrackingRef = useRef<boolean>(false);
 
   // 거리 계산 (Haversine 공식)
   const calculateDistance = (
@@ -188,11 +191,21 @@ export default function HomeScreen() {
   // 앱 상태 감지 (Foreground/Background)
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "background") {
-        console.log("📱 앱이 백그라운드로 전환 - 백그라운드 추적 시작");
+      // 이전 상태와 동일하면 무시 (중복 호출 방지)
+      if (appStateRef.current === nextAppState) {
+        return;
+      }
+
+      const previousState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      if (nextAppState === "background" && !isBackgroundTrackingRef.current) {
+        console.log("📱 앞이 백그라운드로 전환 - 백그라운드 추적 시작");
+        isBackgroundTrackingRef.current = true;
         startBackgroundLocationTracking();
-      } else if (nextAppState === "active") {
-        console.log("📱 앱이 포그라운드로 전환 - 백그라운드 추적 중지");
+      } else if (nextAppState === "active" && previousState === "background") {
+        console.log("📱 앞이 포그라운드로 전환 - 백그라운드 추적 중지");
+        isBackgroundTrackingRef.current = false;
         stopBackgroundLocationTracking();
       }
     });
