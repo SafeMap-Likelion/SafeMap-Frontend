@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { Image as RNImage } from "react-native";
+import { Image as RNImage, Dimensions } from "react-native";
 import EmojiSelector from "react-native-emoji-selector";
 import {
   Box,
@@ -23,6 +23,42 @@ import {
 } from "@gluestack-ui/themed";
 import { FontAwesome } from "@expo/vector-icons";
 import { ReportDetail } from "@/api/types";
+
+// 백엔드 기본 URL (MinIO 이미지 URL 구성용)
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL_MinIO || "http://localhost:8000";
+
+// 이미지 URL을 전체 경로로 변환
+const getFullImageUrl = (photoUrl: string): string => {
+  console.log("📸 원본 photoUrl:", photoUrl);
+  console.log("🌐 API_BASE_URL:", API_BASE_URL);
+
+  if (!photoUrl) return "";
+
+  // localhost:9000 (MinIO 로컬)을 실제 서버 주소로 변환
+  if (
+    photoUrl.includes("localhost:9000") ||
+    photoUrl.includes("127.0.0.1:9000")
+  ) {
+    const convertedUrl = photoUrl.replace(
+      /https?:\/\/(localhost|127\.0\.0\.1):9000/,
+      `${API_BASE_URL}`
+    );
+    console.log("🔄 변환된 URL:", convertedUrl);
+    return convertedUrl;
+  }
+
+  // 이미 절대 URL인 경우 그대로 반환
+  if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+    console.log("✅ 절대 URL 그대로 사용:", photoUrl);
+    return photoUrl;
+  }
+
+  // 상대 경로인 경우 기본 URL 추가
+  const fullUrl = `${API_BASE_URL}${photoUrl.startsWith("/") ? "" : "/"}${photoUrl}`;
+  console.log("🔗 상대경로 → 전체 URL:", fullUrl);
+  return fullUrl;
+};
 
 // ✅ 수정됨
 function RiskBadge({ category, level }: { category: string; level: number }) {
@@ -145,13 +181,17 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
       </Text>
 
       {reportDetail.photos?.length > 0 && (
-        <Box style={{ marginBottom: 10 }}>
-          <AutoHeightImage
-            uri={reportDetail.photos[0].photo}
-            style={{ borderRadius: 15 }}
-            resizeMode="cover"
-          />
-        </Box>
+        <VStack space="sm" style={{ marginBottom: 10 }}>
+          {reportDetail.photos.map((photo, index) => (
+            <Box key={index}>
+              <AutoHeightImage
+                uri={getFullImageUrl(photo.photo)}
+                style={{ borderRadius: 15 }}
+                resizeMode="cover"
+              />
+            </Box>
+          ))}
+        </VStack>
       )}
 
       <HStack justifyContent="flex-end" flexWrap="wrap" style={{ gap: 8 }}>

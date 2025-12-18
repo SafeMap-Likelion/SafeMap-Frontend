@@ -56,6 +56,9 @@ export default function HomeScreen() {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [nearEvents, setNearEvents] = useState<NearEvent[]>([]);
   const [dangerZones, setDangerZones] = useState<DangerZone[]>([]);
+  const [addrA, setAddrA] = useState<string>("");
+  const [addrB, setAddrB] = useState<string>("");
+  const [addrC, setAddrC] = useState<string>("");
   const router = useRouter();
 
   const mapRef = useRef<MapRef>(null);
@@ -129,6 +132,27 @@ export default function HomeScreen() {
         const doc = data.documents[0];
         const fetchedAddress = doc.address.address_name;
         setAddress(fetchedAddress);
+
+        // 주소 3단계 정보 추출
+        const addressData = doc.address || {};
+        const roadAddressData = doc.road_address || {};
+
+        const addr1 =
+          addressData.region_1depth_name ||
+          roadAddressData.region_1depth_name ||
+          "";
+        const addr2 =
+          addressData.region_2depth_name ||
+          roadAddressData.region_2depth_name ||
+          "";
+        const addr3 =
+          addressData.region_3depth_name ||
+          roadAddressData.region_3depth_name ||
+          "";
+
+        setAddrA(addr1);
+        setAddrB(addr2);
+        setAddrC(addr3);
 
         const dong =
           (doc.road_address && doc.road_address.region_3depth_h_name) ||
@@ -447,7 +471,12 @@ export default function HomeScreen() {
             onPress={() =>
               router.push({
                 pathname: "/(main)/news-page",
-                params: { dongName: dongName },
+                params: {
+                  dongName: dongName,
+                  addr_a: addrA,
+                  addr_b: addrB,
+                  addr_c: addrC,
+                },
               })
             }
           >
