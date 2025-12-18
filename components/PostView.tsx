@@ -180,7 +180,7 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
         {reportDetail.description}
       </Text>
 
-      {reportDetail.photos?.length > 0 && (
+      {reportDetail.photos && reportDetail.photos.length > 0 ? (
         <VStack space="sm" style={{ marginBottom: 10 }}>
           {reportDetail.photos.map((photo, index) => (
             <Box key={index}>
@@ -192,6 +192,12 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
             </Box>
           ))}
         </VStack>
+      ) : (
+        <Box style={{ marginBottom: 10 }}>
+          <Text color="#929292" textAlign="center" py={20}>
+            등록된 사진이 없습니다
+          </Text>
+        </Box>
       )}
 
       <HStack justifyContent="flex-end" flexWrap="wrap" style={{ gap: 8 }}>

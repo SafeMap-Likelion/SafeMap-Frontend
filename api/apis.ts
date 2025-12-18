@@ -291,9 +291,16 @@ export async function patchUserInfo(body: UserInfo): Promise<void> {
   }
 }
 
-// 현재 사용자 신고 목록 가져오기 api
+// 현재 사용자 신고 목록 가져오기 api (연결 완료)
 export async function getUserReportList(): Promise<ReportAbstract[]> {
   const URL = `/api/users/self/posts/`;
-  const reportList: ReportAbstract[] = report_list_dummy;
-  return reportList;
+
+  try {
+    const response = await api.get<{ news: ReportAbstract[] }>(URL);
+    console.log("getUserReportList - Response:", response.data);
+    return response.data.news ?? [];
+  } catch (error) {
+    console.error("Failed to fetch user report list:", error);
+    return [];
+  }
 }
