@@ -30,6 +30,20 @@ const getLevelText = (level: number): string => {
   }
 };
 
+// 위험도 레벨에 따른 색상 반환
+const getLevelColor = (level: number): string => {
+  switch (level) {
+    case 1:
+      return "#929292"; // 하 - 회색
+    case 2:
+      return "#FF7A05"; // 중 - 주황색
+    case 3:
+      return "#FF1212"; // 상 - 빨간색
+    default:
+      return "#FF7A05";
+  }
+};
+
 // 날짜 포맷팅
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
@@ -103,7 +117,7 @@ const EventCard: React.FC<{
         <VStack flex={1} space="sm">
           {/* 상단 뱃지 */}
           <HStack
-            bg="$orange500"
+            bg={getLevelColor(event.level)}
             borderRadius="$full"
             px="$2"
             py="$1"
@@ -111,7 +125,7 @@ const EventCard: React.FC<{
             alignItems="center"
             space="sm"
           >
-            <Icon as={Ionicons} name="construct" color="$white" size="xs" />
+            <Icon as={Ionicons} name="warning" color="$white" size="xs" />
             <Text color="$white" size="xs" bold>
               {event.type} - {getLevelText(event.level)}
             </Text>
