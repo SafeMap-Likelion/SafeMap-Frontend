@@ -255,7 +255,7 @@ export default function EventAlarm() {
       addr_b: addr_b,
       addr_c: addr_c,
       addr_d: addr_d,
-      photos: [], // 더미 사진 데이터
+      photos: image ? [image] : [], // 선택한 이미지 URI 전송
     };
 
     try {

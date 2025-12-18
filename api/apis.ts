@@ -51,11 +51,18 @@ export async function getLocationSearch(
   }
 }
 
-// dangerzone 정보 가져오기 api
+// dangerzone 정보 가져오기 api (연결 완료)
 export async function getDangerzoneList(): Promise<DangerZone[]> {
-  const URL = "api/maps/dangerzones/";
-  const dangerzone: DangerZone[] = dangerzone_dummy;
-  return dangerzone;
+  const URL = "/api/maps/dangerzones/";
+
+  try {
+    const response = await api.get<{ dzs: DangerZone[] }>(URL);
+    console.log("Danger zones response:", response.data);
+    return response.data.dzs ?? [];
+  } catch (error) {
+    console.error("Failed to fetch danger zones:", error);
+    return [];
+  }
 }
 
 // 특정 위치 주변 이벤트(신고) 목록 가져오기 api (연결 완료)
@@ -66,8 +73,8 @@ export async function getNearEventList(
   code: number
 ): Promise<NearEvent[]> {
   const URL = `/api/near_events/?latitude=${latitude}&longitude=${longitude}&map_level=${map_level}&code=${code}`;
-
   try {
+    console.log("Fetching near events with URL:", URL);
     const response = await api.get<{ results: NearEvent[] }>(URL);
     return response.data.results ?? [];
   } catch (error) {
@@ -76,35 +83,117 @@ export async function getNearEventList(
   }
 }
 
-// 특정 구역 뉴스 목록 가져오기 api
+// // 특정 구역 뉴스 목록 가져오기 api
+// export async function getNewsList(
+//   addr_a: string,
+//   addr_b: string,
+//   addr_c: string
+// ): Promise<NewsAbstract[]> {
+//   console.log("getNewsList called with:", {
+//     addr_a,
+//     addr_b,
+//     addr_c,
+//   });
+//   const URL = `/api/news/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
+//   const params = {
+//     addr_a: addr_a,
+//     addr_b: addr_b,
+//     addr_c: addr_c,
+//   };
+//   const newsList: NewsAbstract[] = news_list_dummy;
+//   return newsList;
+// }
+
+// 특정 구역 뉴스 목록 가져오기 api (연결 완료)
 export async function getNewsList(
   addr_a: string,
   addr_b: string,
   addr_c: string
 ): Promise<NewsAbstract[]> {
   const URL = `/api/news/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
-  const params = {
-    addr_a: addr_a,
-    addr_b: addr_b,
-    addr_c: addr_c,
-  };
-  const newsList: NewsAbstract[] = news_list_dummy;
-  return newsList;
+
+  try {
+    const response = await api.get<{ results: NewsAbstract[] }>(URL);
+    console.log("News list response:", response.data);
+    return response.data.results ?? [];
+  } catch (error) {
+    console.error("Failed to fetch news list:", error);
+    return [];
+  }
 }
 
-// 특정 뉴스 세부 정보 가져오기 api
+// // 특정 뉴스 세부 정보 가져오기 api
+// export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
+//   const URL = `/api/news/${news_id}/`;
+//   const newsDetail: NewsDetail = news_detail_dummy;
+//   return newsDetail;
+// }
+
+// 특정 뉴스 세부 정보 가져오기 api (연결 완료)
 export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
   const URL = `/api/news/${news_id}/`;
-  const newsDetail: NewsDetail = news_detail_dummy;
-  return newsDetail;
+
+  try {
+    const response = await api.get<NewsDetail>(URL);
+    console.log("News detail response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch news detail:", error);
+    throw error;
+  }
 }
 
 // 신고 생성 api (연결 완료)
 export async function postReport(body: ReportCreate): Promise<ReportId> {
   const URL = `/api/reports/`;
   console.log("postReport - Request Body:", JSON.stringify(body, null, 2));
+
   try {
-    const response = await api.post<ReportId>(URL, body);
+    // FormData 생성
+    const formData = new FormData();
+
+    // 기본 필드 추가
+    formData.append("latitude", body.latitude.toString());
+    formData.append("longitude", body.longitude.toString());
+    formData.append("type", body.type);
+    formData.append("level", body.level.toString());
+    formData.append("title", body.title);
+    formData.append("place", body.place);
+    formData.append("description", body.description);
+    formData.append("addr_a", body.addr_a);
+    formData.append("addr_b", body.addr_b);
+    formData.append("addr_c", body.addr_c);
+    formData.append("addr_d", body.addr_d);
+
+    // 사진 파일 추가
+    if (body.photos && body.photos.length > 0) {
+      for (const photoUri of body.photos) {
+        const filename = photoUri.split("/").pop() || "photo.jpg";
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+
+        // React Native FormData 형식으로 파일 추가
+        formData.append("photos", {
+          uri: photoUri,
+          name: filename,
+          type: type,
+        } as any);
+
+        console.log("Photo added to FormData:", {
+          uri: photoUri,
+          name: filename,
+          type,
+        });
+      }
+    }
+
+    // Content-Type을 설정하지 않으면 axios가 자동으로 multipart/form-data + boundary 설정
+    const response = await api.post<ReportId>(URL, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      transformRequest: (data) => data, // FormData를 변환하지 않고 그대로 전송
+    });
     console.log("postReport - Response:", response.data);
     return response.data;
   } catch (error) {

@@ -63,7 +63,7 @@ export type ReportCreate = {
   addr_b: string;
   addr_c: string;
   addr_d: string;
-  photos: string[];
+  photos?: string[]; // 이미지 URI 배열 (선택적)
 };
 
 export type ReportId = {
