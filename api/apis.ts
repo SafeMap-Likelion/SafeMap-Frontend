@@ -6,7 +6,6 @@ import report_list_dummy from "../dummy/report_list_dummy.json";
 import report_near_events_dummy from "../dummy/report_near_events_dummy.json";
 import report_reaction_dummy from "../dummy/report_reaction_dummy.json";
 import report_id_dummy from "../dummy/report_id_dummy.json";
-import favorite_region_ids_dummy from "../dummy/favorite_region_ids_dummy.json";
 import user_info from "../dummy/user_info_dummy.json";
 import autocomplete_dummy from "../dummy/autocomplete_dummy.json";
 import { api } from "./axios";
@@ -32,7 +31,25 @@ import {
   LocationSearchResult,
 } from "./types";
 
-// locsearch 자동 완성 api (연결 완료)
+const dedupeFavoriteRegions = (pois: FavoriteRegion[]): FavoriteRegion[] => {
+  const seen = new Set<string>();
+  return pois
+    .map(({ type, addr_a, addr_b, addr_c }) => ({
+      type: type?.trim() ?? "",
+      addr_a: addr_a?.trim() ?? "",
+      addr_b: addr_b?.trim() ?? "",
+      addr_c: addr_c?.trim() ?? "",
+    }))
+    .filter(({ type, addr_a, addr_b, addr_c }) => {
+      if (!type || !addr_a || !addr_b || !addr_c) return false;
+      const key = `${type}|${addr_a}|${addr_b}|${addr_c}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+// locsearch 자동 완성 api (프론트엔드 더미 데이터 기반)
 export async function getLocationSearch(
   query: string
 ): Promise<LocationSearchResult[]> {
@@ -51,7 +68,7 @@ export async function getLocationSearch(
   }
 }
 
-// dangerzone 정보 가져오기 api
+// dangerzone 정보 가져오기 api (연결 완료)
 export async function getDangerzoneList(): Promise<DangerZone[]> {
   const URL = "api/maps/dangerzones/";
   const dangerzone: DangerZone[] = dangerzone_dummy;
@@ -76,7 +93,7 @@ export async function getNearEventList(
   }
 }
 
-// 특정 구역 뉴스 목록 가져오기 api
+// 특정 구역 뉴스 목록 가져오기 api (연결 완료)
 export async function getNewsList(
   addr_a: string,
   addr_b: string,
@@ -92,11 +109,25 @@ export async function getNewsList(
   return newsList;
 }
 
-// 특정 뉴스 세부 정보 가져오기 api
+// // 특정 뉴스 세부 정보 가져오기 api
+// export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
+//   const URL = `/api/news/${news_id}/`;
+//   const newsDetail: NewsDetail = news_detail_dummy;
+//   return newsDetail;
+// }
+
+// 특정 뉴스 세부 정보 가져오기 api (연결 완료)
 export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
   const URL = `/api/news/${news_id}/`;
-  const newsDetail: NewsDetail = news_detail_dummy;
-  return newsDetail;
+
+  try {
+    const response = await api.get<NewsDetail>(URL);
+    console.log("News detail response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch news detail:", error);
+    throw error;
+  }
 }
 
 // 신고 생성 api (연결 완료)
@@ -113,7 +144,7 @@ export async function postReport(body: ReportCreate): Promise<ReportId> {
   }
 }
 
-// 특정 구역 신고 목록 가져오기 api
+// 특정 구역 신고 목록 가져오기 api (연결 완료)
 export async function getReportList(
   addr_a: string,
   addr_b: string,
@@ -191,26 +222,46 @@ export async function postReportReaction(
 // 관심지역 (poi: position of interest) 추가 api: 아마 회원가입 직후 최초 설정에서만 쓸 듯?
 export async function postPoiList(
   body: FavoriteRegion[]
-): Promise<FavoriteRegionId[]> {
+): Promise<FavoriteRegionId> {
   const URL = `/api/users/pois/`;
-  const favoriteRegionIds: FavoriteRegionId[] = favorite_region_ids_dummy;
-  return favoriteRegionIds;
+  try {
+    const response = await api.post<FavoriteRegionId>(URL, {
+      pois: dedupeFavoriteRegions(body),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to add favorite regions:", {
+      status: error?.response?.status,
+      data: error?.response?.data,
+      error,
+    });
+    throw error;
+  }
 }
 
-// 사용자 정보 가져오기 api
+// 사용자 정보 가져오기 api (연결 완료)
 export async function getUserInfo(): Promise<UserInfo> {
   const URL = `/api/users/self/info/`;
-  const userInfoData: UserInfo = user_info;
-  return userInfoData;
+  try {
+    const response = await api.get<UserInfo>(URL);
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to fetch user info:", {
+      status: error?.response?.status,
+      data: error?.response?.data,
+      error,
+    });
+    throw error;
+  }
 }
 
-// 사용자 정보 수정 api
+// 사용자 정보 수정 api (연결 완료)
 export async function patchUserInfo(body: UserInfo): Promise<void> {
   const URL = `/api/users/self/info/`;
   return;
 }
 
-// 현재 사용자 신고 목록 가져오기 api
+// 현재 사용자 신고 목록 가져오기 api (연결 완료)
 export async function getUserReportList(): Promise<ReportAbstract[]> {
   const URL = `/api/users/self/posts/`;
   const reportList: ReportAbstract[] = report_list_dummy;
