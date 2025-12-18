@@ -32,23 +32,22 @@ import {
   LocationSearchResult,
 } from "./types";
 
-// locsearch 자동 완성 api (연결 완료)
+// locsearch 자동 완성 api (프론트엔드 더미 데이터 기반)
 export async function getLocationSearch(
   query: string
 ): Promise<LocationSearchResult[]> {
-  if (!query) {
+  if (!query || query.trim().length === 0) {
     return [];
   }
 
-  const URL = `api/maps/loc_search/?location=${query}`;
+  const trimmedQuery = query.trim().toLowerCase();
 
-  try {
-    const response = await api.get<LocationSearchResult[]>(URL);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch location search:", error);
-    return [];
-  }
+  // 더미 데이터에서 입력값을 prefix로 갖는 결과를 필터링 (최대 4개)
+  const filteredResults = autocomplete_dummy
+    .filter((item) => item.result.toLowerCase().includes(trimmedQuery))
+    .slice(0, 4);
+
+  return filteredResults;
 }
 
 // dangerzone 정보 가져오기 api (연결 완료)
@@ -82,27 +81,6 @@ export async function getNearEventList(
     return [];
   }
 }
-
-// // 특정 구역 뉴스 목록 가져오기 api
-// export async function getNewsList(
-//   addr_a: string,
-//   addr_b: string,
-//   addr_c: string
-// ): Promise<NewsAbstract[]> {
-//   console.log("getNewsList called with:", {
-//     addr_a,
-//     addr_b,
-//     addr_c,
-//   });
-//   const URL = `/api/news/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
-//   const params = {
-//     addr_a: addr_a,
-//     addr_b: addr_b,
-//     addr_c: addr_c,
-//   };
-//   const newsList: NewsAbstract[] = news_list_dummy;
-//   return newsList;
-// }
 
 // 특정 구역 뉴스 목록 가져오기 api (연결 완료)
 export async function getNewsList(
@@ -286,17 +264,31 @@ export async function postPoiList(
   return favoriteRegionIds;
 }
 
-// 사용자 정보 가져오기 api
+// 사용자 정보 가져오기 api (연결 완료)
 export async function getUserInfo(): Promise<UserInfo> {
   const URL = `/api/users/self/info/`;
-  const userInfoData: UserInfo = user_info;
-  return userInfoData;
+
+  try {
+    const response = await api.get<UserInfo>(URL);
+    console.log("getUserInfo - Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch user info:", error);
+    throw error;
+  }
 }
 
-// 사용자 정보 수정 api
+// 사용자 정보 수정 api (연결 완료)
 export async function patchUserInfo(body: UserInfo): Promise<void> {
   const URL = `/api/users/self/info/`;
-  return;
+
+  try {
+    const response = await api.patch(URL, body);
+    console.log("patchUserInfo - Response:", response.data);
+  } catch (error) {
+    console.error("Failed to update user info:", error);
+    throw error;
+  }
 }
 
 // 현재 사용자 신고 목록 가져오기 api
