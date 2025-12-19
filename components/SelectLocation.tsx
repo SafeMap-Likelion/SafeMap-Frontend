@@ -10,9 +10,11 @@ import {
   Icon,
   Pressable, // Import Pressable
 } from "@gluestack-ui/themed";
+import { Alert } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { getLocationSearch } from "../api/apis";
 import { LocationSearchResult } from "../api/types";
+import autocomplete_dummy from "../dummy/autocomplete_dummy.json";
 
 interface SelectLocationProps {
   dongName?: string;
@@ -80,6 +82,30 @@ export default function SelectLocation({
     }
   };
 
+  // 직접 입력 후 제출 시 유효성 검사
+  const handleSubmitEditing = () => {
+    const currentValue = searchText.trim();
+    if (!currentValue) return;
+
+    // autocomplete_dummy에 있는 값인지 확인
+    const isValidLocation = autocomplete_dummy.some(
+      (item) => item.result === currentValue
+    );
+
+    if (isValidLocation) {
+      handleSelectLocation(currentValue);
+    } else {
+      Alert.alert(
+        "올바르지 않은 입력",
+        "자동완성된 항목 중에서 선택해주세요.\n\n예: 서울시 관악구 청룡동",
+        [{ text: "확인", style: "default" }]
+      );
+      // 입력값 초기화
+      setValue("search", "");
+      setIsUserTyping(false);
+    }
+  };
+
   const shouldShowList =
     !showListOnInput ||
     (showListOnInput && searchText.trim().length > 0 && isUserTyping);
@@ -135,6 +161,8 @@ export default function SelectLocation({
                           setIsUserTyping(false);
                         }
                       }}
+                      onSubmitEditing={handleSubmitEditing}
+                      returnKeyType="search"
                     />
                   );
                 }}
@@ -152,7 +180,7 @@ export default function SelectLocation({
         {shouldShowList && (
           <Box bg={listBg} rounded="$2xl" flex={1} minHeight={100} p={5} mt={2}>
             {searchResults.length > 0 ? (
-              <ScrollView>
+              <ScrollView keyboardShouldPersistTaps="handled">
                 <VStack space="xs">
                   {searchResults.map((r, i) => (
                     <Pressable
