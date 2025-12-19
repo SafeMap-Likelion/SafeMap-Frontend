@@ -115,6 +115,7 @@ export default function SelectLocation({
                 render={({ field: { onChange, onBlur, value } }) => {
                   return (
                     <InputField
+                      key={dongName} // dongName 변경 시 리렌더링 강제
                       h="100%"
                       flex={1}
                       fontSize={12}

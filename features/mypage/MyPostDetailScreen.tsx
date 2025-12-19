@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import {
@@ -11,7 +11,13 @@ import {
   ArrowLeftIcon,
   ScrollView,
 } from "@gluestack-ui/themed";
-import { Image as RNImage, View, ActivityIndicator, Alert } from "react-native";
+import {
+  Image as RNImage,
+  View,
+  ActivityIndicator,
+  Alert,
+  Platform,
+} from "react-native";
 import EmojiSelector from "react-native-emoji-selector";
 import {
   VStack,
@@ -26,8 +32,43 @@ import {
   ModalCloseButton,
   ModalBody,
 } from "@gluestack-ui/themed";
-import { getReportDetail, deleteReport } from "@/api/apis";
-import { ReportDetail, Photo } from "@/api/types";
+import { FontAwesome } from "@expo/vector-icons";
+import {
+  getReportDetail,
+  deleteReport,
+  getReportReactionList,
+  postReportReaction,
+} from "@/api/apis";
+import { ReportDetail, Photo, ReportReaction } from "@/api/types";
+
+// 간단한 이모지 목록 (Android 폰트 버그 대응)
+const SIMPLE_EMOJIS = [
+  "👍",
+  "👎",
+  "❤️",
+  "😀",
+  "😂",
+  "😢",
+  "😡",
+  "😱",
+  "🔥",
+  "⚠️",
+  "✅",
+  "❌",
+  "👀",
+  "🙏",
+  "💪",
+  "🚨",
+  "🚗",
+  "🏗️",
+  "🌊",
+  "⛑️",
+  "🚓",
+  "🔔",
+  "📍",
+  "⭐",
+  "💯",
+];
 
 // MinIO 이미지 URL 변환
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL_MinIO || "";
@@ -208,37 +249,69 @@ function AutoHeightImage({ uri, style, ...props }: any) {
 // 게시물 본문 컴포넌트
 function PostContent({
   reportDetail,
+  reportId,
   onEditPress,
   onDeletePress,
 }: {
   reportDetail: ReportDetail;
+  reportId: string;
   onEditPress?: () => void;
   onDeletePress?: () => void;
 }) {
   const [isModalVisible, setModalVisible] = useState(false);
-  const [reactions, setReactions] = useState<{ [key: string]: number }>({});
+  const [reactions, setReactions] = useState<ReportReaction[]>([]);
   const [userReactions, setUserReactions] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleEmojiSelect = (emoji: string) => {
+  // 초기 반응 목록 가져오기
+  useEffect(() => {
+    const fetchReactions = async () => {
+      try {
+        const reactionList = await getReportReactionList(reportId);
+        setReactions(reactionList);
+      } catch (error) {
+        console.error("Failed to fetch reactions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchReactions();
+  }, [reportId]);
+
+  const handleEmojiSelect = async (emoji: string) => {
     setModalVisible(false);
 
-    if (userReactions.includes(emoji)) {
+    // API 호출 (mocking된 상태)
+    try {
+      await postReportReaction(reportId, { emoji });
+    } catch (error) {
+      console.error("Failed to post reaction:", error);
+    }
+
+    // 이미 내가 반응한 이모지인지 확인
+    const alreadyReacted = userReactions.includes(emoji);
+
+    if (alreadyReacted) {
+      // 이미 반응한 이모지면 취소 (count 감소)
+      setReactions((prev) =>
+        prev
+          .map((r) => (r.emoji === emoji ? { ...r, num: r.num - 1 } : r))
+          .filter((r) => r.num > 0)
+      );
       setUserReactions((prev) => prev.filter((e) => e !== emoji));
-      setReactions((prev) => {
-        const newReactions = { ...prev };
-        if (newReactions[emoji] > 1) {
-          newReactions[emoji] -= 1;
-        } else {
-          delete newReactions[emoji];
-        }
-        return newReactions;
-      });
     } else {
+      // 새 반응 추가
+      const existingReaction = reactions.find((r) => r.emoji === emoji);
+      if (existingReaction) {
+        // 기존 이모지에 count 증가
+        setReactions((prev) =>
+          prev.map((r) => (r.emoji === emoji ? { ...r, num: r.num + 1 } : r))
+        );
+      } else {
+        // 새 이모지 추가
+        setReactions((prev) => [...prev, { emoji, num: 1 }]);
+      }
       setUserReactions((prev) => [...prev, emoji]);
-      setReactions((prev) => ({
-        ...prev,
-        [emoji]: (prev[emoji] || 0) + 1,
-      }));
     }
   };
 
@@ -275,37 +348,50 @@ function PostContent({
         </Box>
       )}
 
-      {/* Reaction Display와 + 버튼 */}
-      <HStack
-        style={{
-          alignItems: "center",
-          justifyContent: "flex-end",
-          flexWrap: "wrap",
-          gap: 8,
-        }}
-      >
-        {Object.entries(reactions).map(([emoji, count]) => (
-          <Pressable key={emoji} onPress={() => handleEmojiSelect(emoji)}>
-            <Badge
-              backgroundColor="#F3F3F3"
-              borderRadius={15}
-              style={{
-                paddingHorizontal: 5,
-                paddingVertical: 5,
-              }}
+      {/* Slack 스타일 반응 표시 */}
+      <HStack flexWrap="wrap" style={{ gap: 8, marginTop: 10 }}>
+        {reactions.map((reaction) => {
+          const isMyReaction = userReactions.includes(reaction.emoji);
+          return (
+            <Pressable
+              key={reaction.emoji}
+              onPress={() => handleEmojiSelect(reaction.emoji)}
             >
-              <BadgeText color="#565656" fontSize={11}>
-                {emoji} {count}
-              </BadgeText>
-            </Badge>
-          </Pressable>
-        ))}
-
-        {/* + 버튼 */}
+              <Badge
+                backgroundColor={isMyReaction ? "#E3F2FD" : "#F3F3F3"}
+                borderRadius={20}
+                borderWidth={isMyReaction ? 1 : 0}
+                borderColor={isMyReaction ? "#1C9DFF" : "transparent"}
+                style={{ paddingHorizontal: 10, paddingVertical: 6 }}
+              >
+                <HStack alignItems="center" space="xs">
+                  <Text fontSize={16}>{reaction.emoji}</Text>
+                  <Text
+                    fontSize={13}
+                    fontWeight={isMyReaction ? "$bold" : "$normal"}
+                    color={isMyReaction ? "#1C9DFF" : "#565656"}
+                  >
+                    {reaction.num}
+                  </Text>
+                </HStack>
+              </Badge>
+            </Pressable>
+          );
+        })}
+        {/* 반응 추가 버튼 */}
         <Pressable onPress={() => setModalVisible(true)}>
-          <Text fontSize={28} color="#929292" fontWeight="300">
-            +
-          </Text>
+          <Badge
+            backgroundColor="#F3F3F3"
+            borderRadius={20}
+            style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <HStack alignItems="center" space="xs">
+              <FontAwesome name="smile-o" size={16} color="#929292" />
+              <Text fontSize={16} color="#929292">
+                +
+              </Text>
+            </HStack>
+          </Badge>
         </Pressable>
       </HStack>
 
@@ -322,15 +408,44 @@ function PostContent({
               <Icon as={CloseIcon} />
             </ModalCloseButton>
           </ModalHeader>
-          <ModalBody style={{ padding: 0 }}>
-            <Box style={{ height: 400 }}>
-              <EmojiSelector
-                onEmojiSelected={handleEmojiSelect}
-                showSearchBar={false}
-                columns={8}
-                placeholder="이모지를 선택하세요"
-              />
-            </Box>
+          <ModalBody style={{ padding: 10 }}>
+            {Platform.OS === "android" ? (
+              /* Android: 간단한 이모지 그리드 (FontSize 버그 회피) */
+              <HStack
+                flexWrap="wrap"
+                justifyContent="center"
+                style={{ gap: 8 }}
+              >
+                {SIMPLE_EMOJIS.map((emoji) => (
+                  <Pressable
+                    key={emoji}
+                    onPress={() => handleEmojiSelect(emoji)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#F5F5F5",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text fontSize={24}>{emoji}</Text>
+                  </Pressable>
+                ))}
+              </HStack>
+            ) : (
+              /* iOS: EmojiSelector 사용 */
+              <Box style={{ height: 400 }}>
+                <EmojiSelector
+                  onEmojiSelected={handleEmojiSelect}
+                  showSearchBar={false}
+                  showHistory={false}
+                  showSectionTitles={false}
+                  showTabs={false}
+                  columns={8}
+                />
+              </Box>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
@@ -452,6 +567,7 @@ export default function MyPostDetailScreen() {
         {/* 게시물 내용 (수정/삭제 버튼은 제목 옆에) */}
         <PostContent
           reportDetail={reportDetail}
+          reportId={report_id!}
           onEditPress={handleEdit}
           onDeletePress={handleDelete}
         />

@@ -99,13 +99,6 @@ export async function getNewsList(
   }
 }
 
-// // 특정 뉴스 세부 정보 가져오기 api
-// export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
-//   const URL = `/api/news/${news_id}/`;
-//   const newsDetail: NewsDetail = news_detail_dummy;
-//   return newsDetail;
-// }
-
 // 특정 뉴스 세부 정보 가져오기 api (연결 완료)
 export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
   const URL = `/api/news/${news_id}/`;
@@ -354,22 +347,36 @@ export async function deleteReport(report_id: string): Promise<void> {
   }
 }
 
-// 특정 신고 반응 목록 가져오기 api
+// 특정 신고 반응 목록 가져오기 api (연결 완료)
 export async function getReportReactionList(
   report_id: string
 ): Promise<ReportReaction[]> {
   const URL = `/api/reports/${report_id}/reactions/`;
-  const reportReactions: ReportReaction[] = report_reaction_dummy;
-  return reportReactions;
+
+  try {
+    const response = await api.get<{ reactions: ReportReaction[] }>(URL);
+    console.log("getReportReactionList - Response:", response.data);
+    return response.data.reactions ?? [];
+  } catch (error) {
+    console.error("Failed to fetch report reactions:", error);
+    return [];
+  }
 }
 
-// 특정 신고 반응 추가 api
+// 특정 신고 반응 추가 api (연결 완료)
 export async function postReportReaction(
   report_id: string,
   body: Emoji
 ): Promise<void> {
   const URL = `/api/reports/${report_id}/reactions/`;
-  return;
+
+  try {
+    const response = await api.post(URL, body);
+    console.log("postReportReaction - Response:", response.data);
+  } catch (error) {
+    console.error("Failed to post report reaction:", error);
+    throw error;
+  }
 }
 
 // 관심지역 (poi: position of interest) 추가 api: 아마 회원가입 직후 최초 설정에서만 쓸 듯?
