@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { Image as RNImage, Dimensions } from "react-native";
+import { Image as RNImage, Dimensions, Platform } from "react-native";
 import EmojiSelector from "react-native-emoji-selector";
 import {
   Box,
@@ -23,6 +23,35 @@ import {
 } from "@gluestack-ui/themed";
 import { FontAwesome } from "@expo/vector-icons";
 import { ReportDetail } from "@/api/types";
+
+// 간단한 이모지 목록 (Android 폰트 버그 대응)
+const SIMPLE_EMOJIS = [
+  "👍",
+  "👎",
+  "❤️",
+  "😀",
+  "😂",
+  "😢",
+  "😡",
+  "😱",
+  "🔥",
+  "⚠️",
+  "✅",
+  "❌",
+  "👀",
+  "🙏",
+  "💪",
+  "🚨",
+  "🚗",
+  "🏗️",
+  "🌊",
+  "⛑️",
+  "🚓",
+  "🔔",
+  "📍",
+  "⭐",
+  "💯",
+];
 
 // 백엔드 기본 URL (MinIO 이미지 URL 구성용)
 const API_BASE_URL =
@@ -281,14 +310,44 @@ function PostContent({
               <Icon as={CloseIcon} />
             </ModalCloseButton>
           </ModalHeader>
-          <ModalBody style={{ padding: 0 }}>
-            <Box style={{ height: 400 }}>
-              <EmojiSelector
-                onEmojiSelected={handleEmojiSelect}
-                showSearchBar={false}
-                columns={8}
-              />
-            </Box>
+          <ModalBody style={{ padding: 10 }}>
+            {Platform.OS === "android" ? (
+              /* Android: 간단한 이모지 그리드 (FontSize 버그 회피) */
+              <HStack
+                flexWrap="wrap"
+                justifyContent="center"
+                style={{ gap: 8 }}
+              >
+                {SIMPLE_EMOJIS.map((emoji) => (
+                  <Pressable
+                    key={emoji}
+                    onPress={() => handleEmojiSelect(emoji)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#F5F5F5",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text fontSize={24}>{emoji}</Text>
+                  </Pressable>
+                ))}
+              </HStack>
+            ) : (
+              /* iOS: EmojiSelector 사용 */
+              <Box style={{ height: 400 }}>
+                <EmojiSelector
+                  onEmojiSelected={handleEmojiSelect}
+                  showSearchBar={false}
+                  showHistory={false}
+                  showSectionTitles={false}
+                  showTabs={false}
+                  columns={8}
+                />
+              </Box>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
