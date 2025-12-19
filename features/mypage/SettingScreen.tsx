@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -20,14 +20,33 @@ import {
 import { useAuth } from "@clerk/clerk-expo";
 import { useRouter } from "expo-router";
 import SelectLocationWithCat from "../../components/SelectLocationWithCat";
-import { FavoriteRegion } from "../../api/types";
-import { getUserInfo, postPoiList } from "../../api/apis";
+import { getUserInfo, patchUserInfo } from "@/api/apis";
+import { FavoriteRegion, UserInfo } from "@/api/types";
 
-type InterestArea = {
+// 관심지역 표시용 타입
+interface InterestArea {
   category: string;
   location: string;
+}
+
+// FavoriteRegion을 InterestArea로 변환
+const convertToInterestArea = (region: FavoriteRegion): InterestArea => ({
+  category: region.type,
+  location: `${region.addr_a} ${region.addr_b} ${region.addr_c}`.trim(),
+});
+
+// InterestArea를 FavoriteRegion으로 변환
+const convertToFavoriteRegion = (area: InterestArea): FavoriteRegion => {
+  const parts = area.location.split(" ");
+  return {
+    type: area.category,
+    addr_a: parts[0] || "",
+    addr_b: parts[1] || "",
+    addr_c: parts[2] || "",
+  };
 };
 
+// 설정 화면
 const SettingScreen = () => {
   const { signOut } = useAuth();
   const router = useRouter();
@@ -37,7 +56,6 @@ const SettingScreen = () => {
   const [nickname, setNickname] = useState("");
   const [snsAccount, setSnsAccount] = useState("");
   const [interestAreas, setInterestAreas] = useState<InterestArea[]>([]);
-  const [savedFavorites, setSavedFavorites] = useState<FavoriteRegion[]>([]);
 
   const horizontalPadding = 20;
   const inputWidth = width - horizontalPadding * 2;
@@ -46,100 +64,41 @@ const SettingScreen = () => {
     ? inputWidth - categoryBoxWidth - 5 - 30 - 10 // category box - gap - delete icon space
     : inputWidth - categoryBoxWidth - 5;
 
-  const favoriteKey = ({ type, addr_a, addr_b, addr_c }: FavoriteRegion) =>
-    `${type?.trim()}|${addr_a?.trim()}|${addr_b?.trim()}|${addr_c?.trim()}`;
-
-  const buildFavoriteRegions = (): FavoriteRegion[] => {
-    const seen = new Set<string>();
-    return interestAreas
-      .map(({ category, location }) => {
-        const tokens = location.trim().split(/\s+/);
-        const [addr_a = "", addr_b = "", ...rest] = tokens;
-        const addr_c = rest.join(" ");
-        const type = category.trim();
-        return { type, addr_a, addr_b, addr_c };
-      })
-      .filter(({ type, addr_a, addr_b, addr_c }) => {
-        if (!type || !addr_a || !addr_b || !addr_c) return false;
-        const key = favoriteKey({ type, addr_a, addr_b, addr_c });
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-  };
-
-  const normalizeFavoriteRegions = (
-    favorites: FavoriteRegion[]
-  ): FavoriteRegion[] => {
-    const seen = new Set<string>();
-    return favorites
-      .map(({ type, addr_a, addr_b, addr_c }) => ({
-        type: type?.trim() ?? "",
-        addr_a: addr_a?.trim() ?? "",
-        addr_b: addr_b?.trim() ?? "",
-        addr_c: addr_c?.trim() ?? "",
-      }))
-      .filter(({ type, addr_a, addr_b, addr_c }) => {
-        if (!type || !addr_a || !addr_b || !addr_c) return false;
-        const key = favoriteKey({ type, addr_a, addr_b, addr_c });
-        if (seen.has(key)) return false;
-        seen.add(key);
-        return true;
-      });
-  };
-
-  const loadUserInfo = async () => {
-    try {
-      setIsLoading(true);
-      const info = await getUserInfo();
-      setNickname(info.username ?? "");
-      setSnsAccount(info.sns ?? "");
-      const normalizedFavorites = normalizeFavoriteRegions(
-        info.favorite_regions ?? []
-      );
-      const favoritesForView = normalizedFavorites.map(
-        ({ type, addr_a, addr_b, addr_c }) => ({
-          category: type,
-          location: [addr_a, addr_b, addr_c].filter(Boolean).join(" "),
-        })
-      );
-      setSavedFavorites(normalizedFavorites);
-      setInterestAreas(favoritesForView);
-    } catch (error: any) {
-      console.error("Failed to load user info:", {
-        status: error?.response?.status,
-        data: error?.response?.data,
-        error,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // 사용자 정보 로드
   useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        setIsLoading(true);
+        const userInfo = await getUserInfo();
+        setNickname(userInfo.username);
+        setSnsAccount(userInfo.sns);
+        setInterestAreas(userInfo.favorite_regions.map(convertToInterestArea));
+        console.log("사용자 정보 로드 완료:", userInfo);
+      } catch (error) {
+        console.error("사용자 정보 로드 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     loadUserInfo();
   }, []);
 
   const handleEdit = async () => {
     if (isEditing) {
+      // 저장 로직
+      console.log("저장 버튼 클릭");
       try {
-        const favoriteRegions: FavoriteRegion[] = buildFavoriteRegions();
-        const existingKeys = new Set(savedFavorites.map(favoriteKey));
-        const newFavorites = favoriteRegions.filter(
-          (region) => !existingKeys.has(favoriteKey(region))
-        );
-
-        if (newFavorites.length > 0) {
-          await postPoiList(newFavorites);
-        }
-        await loadUserInfo();
+        const userInfo: UserInfo = {
+          username: nickname,
+          sns: snsAccount,
+          favorite_regions: interestAreas.map(convertToFavoriteRegion),
+        };
+        await patchUserInfo(userInfo);
+        console.log("사용자 정보 저장 완료");
         setIsEditing(false);
-      } catch (error: any) {
-        console.error("Failed to save favorite regions:", {
-          status: error?.response?.status,
-          data: error?.response?.data,
-          error,
-        });
+      } catch (error) {
+        console.error("사용자 정보 저장 실패:", error);
       }
     } else {
       setIsEditing(true);
@@ -190,7 +149,8 @@ const SettingScreen = () => {
           </Box>
         ) : (
           <ScrollView
-            scrollEnabled={isEditing}
+            scrollEnabled={true}
+            keyboardShouldPersistTaps="handled"
             contentContainerStyle={{
               paddingHorizontal: horizontalPadding,
               paddingTop: 40,
@@ -198,6 +158,7 @@ const SettingScreen = () => {
             }}
           >
             <VStack gap={26}>
+              {/* 닉네임 */}
               <VStack>
                 <Text fontSize={18} fontWeight="$bold" mb={5}>
                   닉네임
@@ -235,17 +196,13 @@ const SettingScreen = () => {
                 )}
               </VStack>
 
+              {/* 관심지역 */}
               <VStack>
                 <Text fontSize={18} fontWeight="$bold" mb={5}>
                   관심지역
                 </Text>
                 {interestAreas.map((area, index) => (
-                  <HStack
-                    key={`${area.category}-${area.location}-${index}`}
-                    gap={5}
-                    alignItems="center"
-                    mb={10}
-                  >
+                  <HStack key={index} gap={5} alignItems="center" mb={10}>
                     <Box
                       bg="#2FA5FF"
                       w={categoryBoxWidth}
@@ -285,6 +242,7 @@ const SettingScreen = () => {
                   </HStack>
                 ))}
 
+                {/* 지역 추가 */}
                 {isEditing && (
                   <VStack w="100%" mt={26}>
                     <Text fontSize={18} fontWeight="$bold" mb={5}>
@@ -297,6 +255,7 @@ const SettingScreen = () => {
                 )}
               </VStack>
 
+              {/* SNS 연동 계정 */}
               <VStack>
                 <Text fontSize={18} fontWeight="$bold" mb={5}>
                   SNS 연동 계정
@@ -335,6 +294,7 @@ const SettingScreen = () => {
               </VStack>
             </VStack>
 
+            {/* 수정/저장 버튼 */}
             <Pressable
               bg="#1C9DFF"
               w={inputWidth}
@@ -350,6 +310,7 @@ const SettingScreen = () => {
               </Text>
             </Pressable>
 
+            {/* 로그아웃 / 회원탈퇴 버튼 */}
             <HStack gap={10} mt={10}>
               <Pressable
                 bg="#BEBEBE"

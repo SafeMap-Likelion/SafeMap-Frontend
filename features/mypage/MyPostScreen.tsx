@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from "react";
-import { FlatList } from "react-native";
+import React, { useState, useMemo, useEffect } from "react";
+import { FlatList, ActivityIndicator } from "react-native";
 import {
   Box,
   Text,
@@ -13,95 +13,74 @@ import {
 } from "@gluestack-ui/themed";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { getUserReportList } from "@/api/apis";
+import { ReportAbstract } from "@/api/types";
 
-// 데이터 타입
-interface Event {
-  id: string;
-  category: string;
-  dangerLevel: string;
-  title: string;
-  location: string;
-  timestamp: string;
-  imageUrl: string;
-}
+// 위험도 레벨을 텍스트로 변환
+const getLevelText = (level: number): string => {
+  switch (level) {
+    case 1:
+      return "위험도 하";
+    case 2:
+      return "위험도 중";
+    case 3:
+      return "위험도 상";
+    default:
+      return "위험도 중";
+  }
+};
 
-// 더미 데이터 (7개)
-const MY_POSTS: Event[] = [
-  {
-    id: "1",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: "2",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: "3",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: "4",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: "5",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: "6",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-  {
-    id: "7",
-    category: "시설/인프라",
-    dangerLevel: "위험도 중",
-    title: "서울대학교 정문 가로수 넘어짐",
-    location: "서울대학교 관악캠퍼스 정문",
-    timestamp: "25. 9. 16 (화) 20:00",
-    imageUrl:
-      "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-  },
-];
+// 위험도 레벨에 따른 색상 반환
+const getLevelColor = (level: number): string => {
+  switch (level) {
+    case 1:
+      return "#929292"; // 하 - 회색
+    case 2:
+      return "#FF7A05"; // 중 - 주황색
+    case 3:
+      return "#FF1212"; // 상 - 빨간색
+    default:
+      return "#FF7A05";
+  }
+};
+
+// 날짜 포맷팅
+const formatDate = (dateString: string): string => {
+  const date = new Date(dateString);
+  const year = date.getFullYear().toString().slice(2);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
+  const hours = date.getHours().toString().padStart(2, "0");
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+  return `${year}. ${month}. ${day} (${dayOfWeek}) ${hours}:${minutes}`;
+};
+
+// MinIO 이미지 URL 변환
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL_MinIO || "";
+const DEFAULT_IMAGE =
+  "https://via.placeholder.com/80x109/cccccc/666666?text=No+Image";
+
+const getFullImageUrl = (photoUrl: string | null | undefined): string => {
+  if (!photoUrl) return DEFAULT_IMAGE;
+  if (
+    photoUrl.includes("localhost:9000") ||
+    photoUrl.includes("127.0.0.1:9000")
+  ) {
+    return photoUrl.replace(
+      /https?:\/\/(localhost|127\.0\.0\.1):9000/,
+      API_BASE_URL
+    );
+  }
+  if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+    return photoUrl;
+  }
+  return `${API_BASE_URL}${photoUrl.startsWith("/") ? "" : "/"}${photoUrl}`;
+};
 
 // EventCard 컴포넌트 (체크 기능 추가)
 const EventCard: React.FC<{
-  event: Event;
+  event: ReportAbstract;
   isChecked: boolean;
   onToggleCheck: () => void;
 }> = ({ event, isChecked, onToggleCheck }) => {
@@ -120,12 +99,14 @@ const EventCard: React.FC<{
         shadowRadius: 4,
         elevation: 4,
       }}
-      onPress={() => router.push("/(main)/post-detail")}
+      onPress={() =>
+        router.push(`/(main)/mypost-detail?report_id=${event.report_id}`)
+      }
     >
       <HStack space="md" alignItems="center">
         {/* 이미지 */}
         <Image
-          source={{ uri: event.imageUrl }}
+          source={{ uri: getFullImageUrl(event.photo) }}
           alt="Event Image"
           w={80}
           h={109}
@@ -136,7 +117,7 @@ const EventCard: React.FC<{
         <VStack flex={1} space="sm">
           {/* 상단 뱃지 */}
           <HStack
-            bg="$orange500"
+            bg={getLevelColor(event.level)}
             borderRadius="$full"
             px="$2"
             py="$1"
@@ -144,9 +125,9 @@ const EventCard: React.FC<{
             alignItems="center"
             space="sm"
           >
-            <Icon as={Ionicons} name="construct" color="$white" size="xs" />
+            <Icon as={Ionicons} name="warning" color="$white" size="xs" />
             <Text color="$white" size="xs" bold>
-              {event.category} - {event.dangerLevel}
+              {event.type} - {getLevelText(event.level)}
             </Text>
           </HStack>
 
@@ -162,7 +143,7 @@ const EventCard: React.FC<{
               color="$coolGray500"
             />
             <Text size="sm" color="$coolGray600" isTruncated>
-              {event.location}
+              {event.place}
             </Text>
           </HStack>
 
@@ -175,7 +156,7 @@ const EventCard: React.FC<{
               color="$coolGray500"
             />
             <Text size="sm" color="$coolGray600">
-              {event.timestamp}
+              {formatDate(event.created_at)}
             </Text>
           </HStack>
         </VStack>
@@ -198,15 +179,35 @@ const EventCard: React.FC<{
 
 // 마이 포스트 스크린
 const MyPostScreen = () => {
+  const [posts, setPosts] = useState<ReportAbstract[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [pendingSort, setPendingSort] = useState<Set<string>>(new Set());
+
+  // API에서 데이터 가져오기
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        setIsLoading(true);
+        const reportList = await getUserReportList();
+        setPosts(reportList);
+        console.log("내 신고 목록 로드 완료:", reportList);
+      } catch (error) {
+        console.error("내 신고 목록 로드 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPosts();
+  }, []);
 
   // 체크 토글 함수
   const toggleCheck = (id: string) => {
     const isCurrentlyChecked = checkedItems.has(id);
 
     if (!isCurrentlyChecked) {
-      // 체크하는 경우: 즉시 체크 상태로 변경하고 5초 후 정렬
+      // 체크하는 경우: 즉시 체크 상태로 변경하고 1초 후 정렬
       setCheckedItems((prev) => {
         const newSet = new Set(prev);
         newSet.add(id);
@@ -238,14 +239,27 @@ const MyPostScreen = () => {
 
   // 체크된 항목을 아래로 정렬 (pendingSort에 있는 항목은 아직 정렬하지 않음)
   const sortedPosts = useMemo(() => {
-    return [...MY_POSTS].sort((a, b) => {
-      const aChecked = checkedItems.has(a.id) && !pendingSort.has(a.id);
-      const bChecked = checkedItems.has(b.id) && !pendingSort.has(b.id);
+    return [...posts].sort((a, b) => {
+      const aChecked =
+        checkedItems.has(a.report_id) && !pendingSort.has(a.report_id);
+      const bChecked =
+        checkedItems.has(b.report_id) && !pendingSort.has(b.report_id);
       if (aChecked && !bChecked) return 1;
       if (!aChecked && bChecked) return -1;
       return 0;
     });
-  }, [checkedItems, pendingSort]);
+  }, [posts, checkedItems, pendingSort]);
+
+  if (isLoading) {
+    return (
+      <Box flex={1} bg="$white" justifyContent="center" alignItems="center">
+        <ActivityIndicator size="large" color="#1C9DFF" />
+        <Text mt={10} color="#565656">
+          신고 목록 로딩 중...
+        </Text>
+      </Box>
+    );
+  }
 
   return (
     <Box flex={1} bg="$white">
@@ -254,15 +268,20 @@ const MyPostScreen = () => {
         renderItem={({ item }) => (
           <EventCard
             event={item}
-            isChecked={checkedItems.has(item.id)}
-            onToggleCheck={() => toggleCheck(item.id)}
+            isChecked={checkedItems.has(item.report_id)}
+            onToggleCheck={() => toggleCheck(item.report_id)}
           />
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.report_id}
         ListHeaderComponent={
           <Text fontSize={10} color="$coolGray600" mb="$2">
             *해결된 사건은 체크 표시를 눌러주세요
           </Text>
+        }
+        ListEmptyComponent={
+          <Box flex={1} justifyContent="center" alignItems="center" py={50}>
+            <Text color="#565656">등록한 신고가 없습니다</Text>
+          </Box>
         }
         contentContainerStyle={{
           paddingHorizontal: 20,

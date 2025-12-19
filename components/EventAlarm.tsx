@@ -108,6 +108,10 @@ export default function EventAlarm() {
   const [desc, setDesc] = useState<string>("");
   const [image, setImage] = useState<string | null>(null);
   const [scrollEnabled, setScrollEnabled] = useState<boolean>(true);
+  // 지번주소 정보 (시/도, 구, 동)
+  const [addr_a, setAddr_a] = useState<string>("");
+  const [addr_b, setAddr_b] = useState<string>("");
+  const [addr_c, setAddr_c] = useState<string>("");
   const markerBaseUrl =
     "https://raw.githubusercontent.com/SafeMap-Likelion/SafeMap-Frontend/hyukjun_wrapup/assets/markers";
 
@@ -152,11 +156,45 @@ export default function EventAlarm() {
       const data = await response.json();
       if (data.documents && data.documents.length > 0) {
         const doc = data.documents[0];
-        const fetchedAddress = doc.road_address.address_name;
-        setAddress(fetchedAddress);
+
+        // 도로명주소를 표시용으로 사용 (있으면 도로명, 없으면 지번)
+        const roadAddress = doc.road_address?.address_name;
+        const jibunAddress = doc.address?.address_name;
+        setAddress(roadAddress || jibunAddress || "");
+
+        // 지번주소에서 시/도, 구, 동 정보 추출
+        const addressData = doc.address || {};
+        let addr1 = addressData.region_1depth_name || ""; // 시/도
+        const addr2 = addressData.region_2depth_name || ""; // 구
+        const addr3 = addressData.region_3depth_name || ""; // 동
+
+        // "서울" → "서울시", "서울특별시" → "서울시" 등으로 변환
+        if (addr1 === "서울" || addr1 === "서울특별시") {
+          addr1 = "서울시";
+        } else if (addr1.endsWith("특별시") || addr1.endsWith("광역시")) {
+          // 부산광역시 → 부산시, 인천광역시 → 인천시 등
+          addr1 = addr1.replace(/특별시$|광역시$/, "시");
+        } else if (addr1.endsWith("특별자치시")) {
+          // 세종특별자치시 → 세종시
+          addr1 = addr1.replace(/특별자치시$/, "시");
+        } else if (addr1.endsWith("특별자치도")) {
+          // 제주특별자치도 → 제주도
+          addr1 = addr1.replace(/특별자치도$/, "도");
+        }
+
+        setAddr_a(addr1);
+        setAddr_b(addr2);
+        setAddr_c(addr3);
+
+        console.log("지번주소 파싱:", {
+          addr_a: addr1,
+          addr_b: addr2,
+          addr_c: addr3,
+        });
+        console.log("도로명주소:", roadAddress);
       }
     } catch (error) {
-      // console.error('주소를 가져오는 데 실패했습니다:', error);
+      console.error("주소를 가져오는 데 실패했습니다:", error);
     }
   };
 
@@ -234,14 +272,10 @@ export default function EventAlarm() {
       return 2;
     };
 
-    // 주소를 파싱 (임시로 주소 전체를 addr_a에 넣고 나머지는 빈 문자열)
-    const addressParts = address?.split(" ") || [];
-    const addr_a = addressParts[0] || "";
-    const addr_b = addressParts[1] || "";
-    const addr_c = addressParts[2] || "";
-    const addr_d = addressParts.slice(3).join(" ") || "";
-
+    // 지번주소: addr_a(시/도), addr_b(구), addr_c(동)
+    // 도로명주소: addr_d
     console.log("Report level being sent:", getLevelFromDanger(level));
+    console.log("주소 정보:", { addr_a, addr_b, addr_c, addr_d: address });
 
     const reportData: ReportCreate = {
       latitude: mapCenter.latitude,
@@ -254,8 +288,8 @@ export default function EventAlarm() {
       addr_a: addr_a,
       addr_b: addr_b,
       addr_c: addr_c,
-      addr_d: addr_d,
-      photos: [], // 더미 사진 데이터
+      addr_d: address || "", // 도로명주소 전체를 addr_d에
+      photos: image ? [image] : [], // 선택한 이미지 URI 전송
     };
 
     try {

@@ -56,6 +56,9 @@ export default function HomeScreen() {
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [nearEvents, setNearEvents] = useState<NearEvent[]>([]);
   const [dangerZones, setDangerZones] = useState<DangerZone[]>([]);
+  const [addrA, setAddrA] = useState<string>("");
+  const [addrB, setAddrB] = useState<string>("");
+  const [addrC, setAddrC] = useState<string>("");
   const router = useRouter();
 
   const mapRef = useRef<MapRef>(null);
@@ -64,6 +67,9 @@ export default function HomeScreen() {
   );
   const dangerZonesRef = useRef<DangerZone[]>([]);
   const insideZonesRef = useRef<{ [key: string]: boolean }>({});
+  // AppState 중복 호출 방지를 위한 ref
+  const appStateRef = useRef<string>(AppState.currentState);
+  const isBackgroundTrackingRef = useRef<boolean>(false);
 
   // 거리 계산 (Haversine 공식)
   const calculateDistance = (
@@ -130,6 +136,27 @@ export default function HomeScreen() {
         const fetchedAddress = doc.address.address_name;
         setAddress(fetchedAddress);
 
+        // 주소 3단계 정보 추출
+        const addressData = doc.address || {};
+        const roadAddressData = doc.road_address || {};
+
+        const addr1 =
+          addressData.region_1depth_name ||
+          roadAddressData.region_1depth_name ||
+          "";
+        const addr2 =
+          addressData.region_2depth_name ||
+          roadAddressData.region_2depth_name ||
+          "";
+        const addr3 =
+          addressData.region_3depth_name ||
+          roadAddressData.region_3depth_name ||
+          "";
+
+        setAddrA(addr1);
+        setAddrB(addr2);
+        setAddrC(addr3);
+
         const dong =
           (doc.road_address && doc.road_address.region_3depth_h_name) ||
           (doc.address && doc.address.region_3depth_h_name) ||
@@ -164,11 +191,21 @@ export default function HomeScreen() {
   // 앱 상태 감지 (Foreground/Background)
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "background") {
-        console.log("📱 앱이 백그라운드로 전환 - 백그라운드 추적 시작");
+      // 이전 상태와 동일하면 무시 (중복 호출 방지)
+      if (appStateRef.current === nextAppState) {
+        return;
+      }
+
+      const previousState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      if (nextAppState === "background" && !isBackgroundTrackingRef.current) {
+        console.log("📱 앞이 백그라운드로 전환 - 백그라운드 추적 시작");
+        isBackgroundTrackingRef.current = true;
         startBackgroundLocationTracking();
-      } else if (nextAppState === "active") {
-        console.log("📱 앱이 포그라운드로 전환 - 백그라운드 추적 중지");
+      } else if (nextAppState === "active" && previousState === "background") {
+        console.log("📱 앞이 포그라운드로 전환 - 백그라운드 추적 중지");
+        isBackgroundTrackingRef.current = false;
         stopBackgroundLocationTracking();
       }
     });
@@ -447,7 +484,12 @@ export default function HomeScreen() {
             onPress={() =>
               router.push({
                 pathname: "/(main)/news-page",
-                params: { dongName: dongName },
+                params: {
+                  dongName: dongName,
+                  addr_a: addrA,
+                  addr_b: addrB,
+                  addr_c: addrC,
+                },
               })
             }
           >

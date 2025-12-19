@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   VStack,
@@ -15,6 +15,8 @@ import {
   Pressable,
 } from "@gluestack-ui/themed";
 import * as Font from "expo-font";
+import { getLocationSearch } from "@/api/apis";
+import { LocationSearchResult } from "@/api/types";
 
 type SelectLocationWithCatProps = {
   onAdd?: (category: string, location: string) => void;
@@ -27,20 +29,46 @@ export default function SelectLocationWithCat({
   const [isHovered, setIsHovered] = useState(false);
   const [category, setCategory] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("");
-  const regions = [
-    "서울특별시 종로구 부암동",
-    "서울특별시 종로구 평창동",
-    "서울특별시 종로구 송인동",
-    "서울특별시 종로구 창신동",
-    "서울특별시 종로구 부암동",
-    "서울특별시 종로구 평창동",
-    "서울특별시 종로구 송인동",
-    "서울특별시 종로구 창신동",
-    "서울특별시 종로구 부암동",
-    "서울특별시 종로구 평창동",
-    "서울특별시 종로구 송인동",
-    "서울특별시 종로구 창신동",
-  ];
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<LocationSearchResult[]>(
+    []
+  );
+  const [isSearching, setIsSearching] = useState(false);
+
+  // 디바운스된 검색 실행
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const debounceTimer = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const results = await getLocationSearch(searchQuery);
+        setSearchResults(results);
+        console.log("검색 결과:", results);
+      } catch (error) {
+        console.error("위치 검색 실패:", error);
+        setSearchResults([]);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300); // 300ms 디바운스
+
+    return () => clearTimeout(debounceTimer);
+  }, [searchQuery]);
+
+  const handleLocationInputChange = (text: string) => {
+    setSearchQuery(text);
+    setSelectedLocation(text);
+  };
+
+  const handleSelectLocation = (location: string) => {
+    setSelectedLocation(location);
+    setSearchQuery(""); // 검색어 초기화하여 자동완성 목록 숨김
+    setSearchResults([]);
+  };
 
   return (
     <Box flex={1} bg="#f3f3f3" py={15} px={30} rounded="$2xl" w="100%">
@@ -106,40 +134,70 @@ export default function SelectLocationWithCat({
                 placeholder="서울특별시"
                 color="#565656"
                 value={selectedLocation}
-                onChangeText={setSelectedLocation}
+                onChangeText={handleLocationInputChange}
               />
             </Input>
           </HStack>
-          <HStack maxHeight={113}>
-            <Text
-              w={55}
-              textAlign="right"
-              fontFamily="Pretendard"
-              fontSize={13}
-              fontWeight={500}
-              mr={11}
-            ></Text>
-            <Box bg="$white" rounded="$2xl" flex={1}>
-              <ScrollView py={5}>
-                <VStack space="xs">
-                  {regions.map((r, i) => (
-                    <Pressable key={i} onPress={() => setSelectedLocation(r)}>
+          {/* 자동완성 결과 표시 (검색어가 있고 결과가 있을 때만) */}
+          {searchQuery.trim() && (
+            <HStack maxHeight={113}>
+              <Text
+                w={55}
+                textAlign="right"
+                fontFamily="Pretendard"
+                fontSize={13}
+                fontWeight={500}
+                mr={11}
+              ></Text>
+              <Box bg="$white" rounded="$2xl" flex={1}>
+                <ScrollView py={5}>
+                  <VStack space="xs">
+                    {isSearching ? (
                       <Text
                         textAlign="center"
                         fontFamily="Pretendard"
                         fontSize={12}
                         fontWeight={500}
-                        color="#565656"
+                        color="#9e9e9e"
                         py={2.5}
                       >
-                        {r}
+                        검색 중...
                       </Text>
-                    </Pressable>
-                  ))}
-                </VStack>
-              </ScrollView>
-            </Box>
-          </HStack>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((result, i) => (
+                        <Pressable
+                          key={i}
+                          onPress={() => handleSelectLocation(result.result)}
+                        >
+                          <Text
+                            textAlign="center"
+                            fontFamily="Pretendard"
+                            fontSize={12}
+                            fontWeight={500}
+                            color="#565656"
+                            py={2.5}
+                          >
+                            {result.result}
+                          </Text>
+                        </Pressable>
+                      ))
+                    ) : (
+                      <Text
+                        textAlign="center"
+                        fontFamily="Pretendard"
+                        fontSize={12}
+                        fontWeight={500}
+                        color="#9e9e9e"
+                        py={2.5}
+                      >
+                        검색 결과가 없습니다
+                      </Text>
+                    )}
+                  </VStack>
+                </ScrollView>
+              </Box>
+            </HStack>
+          )}
         </VStack>
 
         <Button
@@ -153,6 +211,8 @@ export default function SelectLocationWithCat({
               onAdd(category, selectedLocation);
               setCategory("");
               setSelectedLocation("");
+              setSearchQuery("");
+              setSearchResults([]);
             }
           }}
           rounded="$2xl"
