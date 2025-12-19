@@ -6,7 +6,6 @@ import report_list_dummy from "../dummy/report_list_dummy.json";
 import report_near_events_dummy from "../dummy/report_near_events_dummy.json";
 import report_reaction_dummy from "../dummy/report_reaction_dummy.json";
 import report_id_dummy from "../dummy/report_id_dummy.json";
-import favorite_region_ids_dummy from "../dummy/favorite_region_ids_dummy.json";
 import user_info from "../dummy/user_info_dummy.json";
 import autocomplete_dummy from "../dummy/autocomplete_dummy.json";
 import { api } from "./axios";
@@ -288,10 +287,21 @@ export async function postReportReaction(
 // 관심지역 (poi: position of interest) 추가 api: 아마 회원가입 직후 최초 설정에서만 쓸 듯?
 export async function postPoiList(
   body: FavoriteRegion[]
-): Promise<FavoriteRegionId[]> {
+): Promise<FavoriteRegionId> {
   const URL = `/api/users/pois/`;
-  const favoriteRegionIds: FavoriteRegionId[] = favorite_region_ids_dummy;
-  return favoriteRegionIds;
+  try {
+    const response = await api.post<FavoriteRegionId>(URL, {
+      pois: dedupeFavoriteRegions(body),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to add favorite regions:", {
+      status: error?.response?.status,
+      data: error?.response?.data,
+      error,
+    });
+    throw error;
+  }
 }
 
 // 사용자 정보 가져오기 api (연결 완료)
@@ -333,4 +343,7 @@ export async function getUserReportList(): Promise<ReportAbstract[]> {
     console.error("Failed to fetch user report list:", error);
     return [];
   }
+}
+function dedupeFavoriteRegions(body: FavoriteRegion[]) {
+  throw new Error("Function not implemented.");
 }

@@ -61,7 +61,7 @@ const SettingScreen = () => {
   const inputWidth = width - horizontalPadding * 2;
   const categoryBoxWidth = 60;
   const locationBoxWidth = isEditing
-    ? inputWidth - categoryBoxWidth - 5 - 30 - 10 // 카테고리 박스 - 간격 - 삭제 아이콘 - 여유공간
+    ? inputWidth - categoryBoxWidth - 5 - 30 - 10 // category box - gap - delete icon space
     : inputWidth - categoryBoxWidth - 5;
 
   // 사용자 정보 로드
@@ -101,8 +101,6 @@ const SettingScreen = () => {
         console.error("사용자 정보 저장 실패:", error);
       }
     } else {
-      // 수정 모드로 전환
-      console.log("수정 버튼 클릭");
       setIsEditing(true);
     }
   };
@@ -120,21 +118,18 @@ const SettingScreen = () => {
   const handleLogout = async () => {
     try {
       await signOut();
-      // 로그아웃 후 로그인 화면으로 이동
       router.replace("/(auth)");
     } catch (error) {
-      console.error("로그아웃 실패:", error);
+      console.error("로그아웃 실패", error);
     }
   };
 
   const handleWithdraw = async () => {
     try {
-      console.log("회원탈퇴 버튼 클릭");
-      // TODO: 회원탈퇴 API 호출
       await signOut();
       router.replace("/(auth)");
     } catch (error) {
-      console.error("회원탈퇴 실패:", error);
+      console.error("회원탈퇴 실패", error);
     }
   };
 
