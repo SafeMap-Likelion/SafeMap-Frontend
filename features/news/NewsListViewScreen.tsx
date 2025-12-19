@@ -10,7 +10,10 @@ import { useLocalSearchParams } from "expo-router";
 
 export default function NewsScreen() {
   const params = useLocalSearchParams();
-  const dongName = (params.dongName as string) || "봉천동";
+  const dongName = (params.dongName as string) || "낙성대동";
+  const addrA = (params.addr_a as string) || "서울시";
+  const addrB = (params.addr_b as string) || "관악구";
+  const addrC = (params.addr_c as string) || "낙성대동";
   const [newsData, setNewsData] = useState<NewsAbstract[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -18,7 +21,7 @@ export default function NewsScreen() {
     const fetchNews = async () => {
       try {
         setLoading(true);
-        const data = await getNewsList("서울특별시", "관악구", "봉천동");
+        const data = await getNewsList(addrA, addrB, addrC);
         setNewsData(data);
       } catch (error) {
         console.error("Failed to fetch news list:", error);
@@ -28,11 +31,11 @@ export default function NewsScreen() {
     };
 
     fetchNews();
-  }, []);
+  }, [addrA, addrB, addrC]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <Box flex={1} bg="$white">
+      <Box flex={1} bg="$white" pt={50}>
         <Header title={`'${dongName}' 뉴스`} />
         <InfoBubble location={dongName} />
         <ScrollView

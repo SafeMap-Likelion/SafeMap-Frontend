@@ -6,7 +6,6 @@ import report_list_dummy from "../dummy/report_list_dummy.json";
 import report_near_events_dummy from "../dummy/report_near_events_dummy.json";
 import report_reaction_dummy from "../dummy/report_reaction_dummy.json";
 import report_id_dummy from "../dummy/report_id_dummy.json";
-import favorite_region_ids_dummy from "../dummy/favorite_region_ids_dummy.json";
 import user_info from "../dummy/user_info_dummy.json";
 import autocomplete_dummy from "../dummy/autocomplete_dummy.json";
 import { api } from "./axios";
@@ -32,30 +31,36 @@ import {
   LocationSearchResult,
 } from "./types";
 
-// locsearch 자동 완성 api (연결 완료)
+// locsearch 자동 완성 api (프론트엔드 더미 데이터 기반)
 export async function getLocationSearch(
   query: string
 ): Promise<LocationSearchResult[]> {
-  if (!query) {
+  if (!query || query.trim().length === 0) {
     return [];
   }
 
-  const URL = `api/maps/loc_search/?location=${query}`;
+  const trimmedQuery = query.trim().toLowerCase();
 
-  try {
-    const response = await api.get<LocationSearchResult[]>(URL);
-    return response.data;
-  } catch (error) {
-    console.error("Failed to fetch location search:", error);
-    return [];
-  }
+  // 더미 데이터에서 입력값을 prefix로 갖는 결과를 필터링 (최대 4개)
+  const filteredResults = autocomplete_dummy
+    .filter((item) => item.result.toLowerCase().includes(trimmedQuery))
+    .slice(0, 4);
+
+  return filteredResults;
 }
 
-// dangerzone 정보 가져오기 api
+// dangerzone 정보 가져오기 api (연결 완료)
 export async function getDangerzoneList(): Promise<DangerZone[]> {
-  const URL = "api/maps/dangerzones/";
-  const dangerzone: DangerZone[] = dangerzone_dummy;
-  return dangerzone;
+  const URL = "/api/maps/dangerzones/";
+
+  try {
+    const response = await api.get<{ dzs: DangerZone[] }>(URL);
+    console.log("Danger zones response:", response.data);
+    return response.data.dzs ?? [];
+  } catch (error) {
+    // 네트워크 오류 시 조용히 빈 배열 반환
+    return [];
+  }
 }
 
 // 특정 위치 주변 이벤트(신고) 목록 가져오기 api (연결 완료)
@@ -66,67 +71,150 @@ export async function getNearEventList(
   code: number
 ): Promise<NearEvent[]> {
   const URL = `/api/near_events/?latitude=${latitude}&longitude=${longitude}&map_level=${map_level}&code=${code}`;
-
   try {
     const response = await api.get<{ results: NearEvent[] }>(URL);
     return response.data.results ?? [];
   } catch (error) {
-    console.error("Failed to fetch near events:", error);
+    // 네트워크 오류 시 조용히 빈 배열 반환
     return [];
   }
 }
 
-// 특정 구역 뉴스 목록 가져오기 api
+// 특정 구역 뉴스 목록 가져오기 api (연결 완료)
 export async function getNewsList(
   addr_a: string,
   addr_b: string,
   addr_c: string
 ): Promise<NewsAbstract[]> {
   const URL = `/api/news/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
-  const params = {
-    addr_a: addr_a,
-    addr_b: addr_b,
-    addr_c: addr_c,
-  };
-  const newsList: NewsAbstract[] = news_list_dummy;
-  return newsList;
+  console.log("Fetching news list with URL:", URL);
+  try {
+    const response = await api.get<{ news: NewsAbstract[] }>(URL);
+    console.log("News list response:", response.data);
+    return response.data.news ?? [];
+  } catch (error) {
+    console.error("Failed to fetch news list:", error);
+    return [];
+  }
 }
 
-// 특정 뉴스 세부 정보 가져오기 api
+// 특정 뉴스 세부 정보 가져오기 api (연결 완료)
 export async function getNewsDetail(news_id: string): Promise<NewsDetail> {
   const URL = `/api/news/${news_id}/`;
-  const newsDetail: NewsDetail = news_detail_dummy;
-  return newsDetail;
+
+  try {
+    const response = await api.get<NewsDetail>(URL);
+    console.log("News detail response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch news detail:", error);
+    throw error;
+  }
 }
 
 // 신고 생성 api (연결 완료)
 export async function postReport(body: ReportCreate): Promise<ReportId> {
   const URL = `/api/reports/`;
+  console.log("========== postReport 요청 시작 ==========");
   console.log("postReport - Request Body:", JSON.stringify(body, null, 2));
+
   try {
-    const response = await api.post<ReportId>(URL, body);
+    // FormData 생성
+    const formData = new FormData();
+
+    // 기본 필드 추가
+    formData.append("latitude", body.latitude.toString());
+    formData.append("longitude", body.longitude.toString());
+    formData.append("type", body.type);
+    formData.append("level", body.level.toString());
+    formData.append("title", body.title);
+    formData.append("place", body.place);
+    formData.append("description", body.description);
+    formData.append("addr_a", body.addr_a);
+    formData.append("addr_b", body.addr_b);
+    formData.append("addr_c", body.addr_c);
+    formData.append("addr_d", body.addr_d);
+
+    // FormData 내용 로그
+    console.log("FormData 필드:");
+    console.log("  - latitude:", body.latitude.toString());
+    console.log("  - longitude:", body.longitude.toString());
+    console.log("  - type:", body.type);
+    console.log("  - level:", body.level.toString());
+    console.log("  - title:", body.title);
+    console.log("  - place:", body.place);
+    console.log("  - description:", body.description);
+    console.log("  - addr_a:", body.addr_a);
+    console.log("  - addr_b:", body.addr_b);
+    console.log("  - addr_c:", body.addr_c);
+    console.log("  - addr_d:", body.addr_d);
+
+    // 사진 파일 추가
+    if (body.photos && body.photos.length > 0) {
+      for (const photoUri of body.photos) {
+        const filename = photoUri.split("/").pop() || "photo.jpg";
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+
+        // React Native FormData 형식으로 파일 추가
+        formData.append("photos", {
+          uri: photoUri,
+          name: filename,
+          type: type,
+        } as any);
+
+        console.log("Photo added to FormData:", {
+          uri: photoUri,
+          name: filename,
+          type,
+        });
+      }
+    } else {
+      console.log("  - photos: 없음");
+    }
+
+    console.log("========== API 호출 중... ==========");
+
+    // Content-Type을 설정하지 않으면 axios가 자동으로 multipart/form-data + boundary 설정
+    const response = await api.post<ReportId>(URL, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      transformRequest: (data) => data, // FormData를 변환하지 않고 그대로 전송
+    });
     console.log("postReport - Response:", response.data);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
+    console.error("========== postReport 에러 ==========");
     console.error("Failed to create report:", error);
+    if (error.response) {
+      console.error("에러 상태 코드:", error.response.status);
+      console.error(
+        "에러 응답 데이터:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+      console.error("에러 응답 헤더:", error.response.headers);
+    }
     throw error;
   }
 }
 
-// 특정 구역 신고 목록 가져오기 api
+// 특정 구역 신고 목록 가져오기 api (연결 완료)
 export async function getReportList(
   addr_a: string,
   addr_b: string,
   addr_c: string
 ): Promise<ReportAbstract[]> {
   const URL = `/api/reports/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
-  const params = {
-    addr_a: addr_a,
-    addr_b: addr_b,
-    addr_c: addr_c,
-  };
-  const reportList: ReportAbstract[] = report_list_dummy;
-  return reportList;
+
+  try {
+    const response = await api.get<{ reports: ReportAbstract[] }>(URL);
+    console.log("getReportList - Response:", response.data);
+    return response.data.reports ?? [];
+  } catch (error) {
+    console.error("Failed to fetch report list:", error);
+    return [];
+  }
 }
 
 // 특정 신고 세부 정보 가져오기 api (연결 완료)
@@ -144,75 +232,212 @@ export async function getReportDetail(
   }
 }
 
-// 특정 신고 수정 api (put)
-export async function putReport(
-  report_id: string,
-  body: ReportEdit
-): Promise<ReportEdit> {
-  const URL = `/api/reports/${report_id}/`;
-  const updatedReport: ReportEdit = body;
-  return updatedReport;
-}
-
-// 특정 신고 부분 수정 api (patch, 사실상 put과 동일하게 구현)
+// 특정 신고 수정 api (patch - 연결 완료, multipart/form-data 지원)
 export async function patchReport(
   report_id: string,
-  body: ReportEdit
+  body: ReportEdit,
+  newPhotoUri?: string | null // 새로 선택한 사진 URI (로컬 파일)
 ): Promise<ReportEdit> {
   const URL = `/api/reports/${report_id}/`;
-  const updatedReport: ReportEdit = body;
-  return updatedReport;
+  console.log("========== patchReport 요청 시작 ==========");
+  console.log("patchReport - Request Body:", JSON.stringify(body, null, 2));
+  console.log("patchReport - New Photo URI:", newPhotoUri);
+
+  try {
+    // FormData 생성
+    const formData = new FormData();
+
+    // 기본 필드 추가
+    formData.append("latitude", body.latitude.toString());
+    formData.append("longitude", body.longitude.toString());
+    formData.append("type", body.type);
+    formData.append("level", body.level.toString());
+    formData.append("title", body.title);
+    formData.append("place", body.place);
+    formData.append("description", body.description);
+    formData.append("addr_a", body.addr_a);
+    formData.append("addr_b", body.addr_b);
+    formData.append("addr_c", body.addr_c);
+    formData.append("addr_d", body.addr_d);
+    formData.append("state", body.state);
+
+    // FormData 내용 로그
+    console.log("FormData 필드:");
+    console.log("  - latitude:", body.latitude.toString());
+    console.log("  - longitude:", body.longitude.toString());
+    console.log("  - type:", body.type);
+    console.log("  - level:", body.level.toString());
+    console.log("  - title:", body.title);
+    console.log("  - place:", body.place);
+    console.log("  - description:", body.description);
+    console.log("  - addr_a:", body.addr_a);
+    console.log("  - addr_b:", body.addr_b);
+    console.log("  - addr_c:", body.addr_c);
+    console.log("  - addr_d:", body.addr_d);
+
+    // 새 사진 파일 추가 (있는 경우)
+    if (newPhotoUri) {
+      const filename = newPhotoUri.split("/").pop() || "photo.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+
+      // React Native FormData 형식으로 파일 추가
+      formData.append("photos", {
+        uri: newPhotoUri,
+        name: filename,
+        type: type,
+      } as any);
+
+      console.log("New photo added to FormData:", {
+        uri: newPhotoUri,
+        name: filename,
+        type,
+      });
+    } else {
+      console.log("  - photos: 새 사진 없음 (기존 유지)");
+    }
+
+    console.log("========== API 호출 중... ==========");
+
+    // Content-Type을 설정하지 않으면 axios가 자동으로 multipart/form-data + boundary 설정
+    const response = await api.patch<ReportEdit>(URL, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      transformRequest: (data) => data, // FormData를 변환하지 않고 그대로 전송
+    });
+    console.log("patchReport - Response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error("========== patchReport 에러 ==========");
+    console.error("Failed to update report:", error);
+    if (error.response) {
+      console.error("에러 상태 코드:", error.response.status);
+      console.error(
+        "에러 응답 데이터:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+      console.error("에러 응답 헤더:", error.response.headers);
+    }
+    throw error;
+  }
 }
 
-// 특정 신고 삭제 api
+// 특정 신고 삭제 api (연결 완료)
 export async function deleteReport(report_id: string): Promise<void> {
   const URL = `/api/reports/${report_id}/`;
-  return;
+  console.log("========== deleteReport 요청 시작 ==========");
+  console.log("deleteReport - report_id:", report_id);
+
+  try {
+    const response = await api.delete(URL);
+    console.log("deleteReport - Response:", response.status);
+  } catch (error: any) {
+    console.error("========== deleteReport 에러 ==========");
+    console.error("Failed to delete report:", error);
+    if (error.response) {
+      console.error("에러 상태 코드:", error.response.status);
+      console.error(
+        "에러 응답 데이터:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+    }
+    throw error;
+  }
 }
 
-// 특정 신고 반응 목록 가져오기 api
+// 특정 신고 반응 목록 가져오기 api (연결 완료)
 export async function getReportReactionList(
   report_id: string
 ): Promise<ReportReaction[]> {
   const URL = `/api/reports/${report_id}/reactions/`;
-  const reportReactions: ReportReaction[] = report_reaction_dummy;
-  return reportReactions;
+
+  try {
+    const response = await api.get<{ reactions: ReportReaction[] }>(URL);
+    console.log("getReportReactionList - Response:", response.data);
+    return response.data.reactions ?? [];
+  } catch (error) {
+    console.error("Failed to fetch report reactions:", error);
+    return [];
+  }
 }
 
-// 특정 신고 반응 추가 api
+// 특정 신고 반응 추가 api (연결 완료)
 export async function postReportReaction(
   report_id: string,
   body: Emoji
 ): Promise<void> {
   const URL = `/api/reports/${report_id}/reactions/`;
-  return;
+
+  try {
+    const response = await api.post(URL, body);
+    console.log("postReportReaction - Response:", response.data);
+  } catch (error) {
+    console.error("Failed to post report reaction:", error);
+    throw error;
+  }
 }
 
 // 관심지역 (poi: position of interest) 추가 api: 아마 회원가입 직후 최초 설정에서만 쓸 듯?
 export async function postPoiList(
   body: FavoriteRegion[]
-): Promise<FavoriteRegionId[]> {
+): Promise<FavoriteRegionId> {
   const URL = `/api/users/pois/`;
-  const favoriteRegionIds: FavoriteRegionId[] = favorite_region_ids_dummy;
-  return favoriteRegionIds;
+  try {
+    const response = await api.post<FavoriteRegionId>(URL, {
+      pois: dedupeFavoriteRegions(body),
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Failed to add favorite regions:", {
+      status: error?.response?.status,
+      data: error?.response?.data,
+      error,
+    });
+    throw error;
+  }
 }
 
-// 사용자 정보 가져오기 api
+// 사용자 정보 가져오기 api (연결 완료)
 export async function getUserInfo(): Promise<UserInfo> {
   const URL = `/api/users/self/info/`;
-  const userInfoData: UserInfo = user_info;
-  return userInfoData;
+
+  try {
+    const response = await api.get<UserInfo>(URL);
+    console.log("getUserInfo - Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to fetch user info:", error);
+    throw error;
+  }
 }
 
-// 사용자 정보 수정 api
+// 사용자 정보 수정 api (연결 완료)
 export async function patchUserInfo(body: UserInfo): Promise<void> {
   const URL = `/api/users/self/info/`;
-  return;
+
+  try {
+    const response = await api.patch(URL, body);
+    console.log("patchUserInfo - Response:", response.data);
+  } catch (error) {
+    console.error("Failed to update user info:", error);
+    throw error;
+  }
 }
 
-// 현재 사용자 신고 목록 가져오기 api
+// 현재 사용자 신고 목록 가져오기 api (연결 완료)
 export async function getUserReportList(): Promise<ReportAbstract[]> {
   const URL = `/api/users/self/posts/`;
-  const reportList: ReportAbstract[] = report_list_dummy;
-  return reportList;
+
+  try {
+    const response = await api.get<{ news: ReportAbstract[] }>(URL);
+    console.log("getUserReportList - Response:", response.data);
+    return response.data.news ?? [];
+  } catch (error) {
+    console.error("Failed to fetch user report list:", error);
+    return [];
+  }
+}
+function dedupeFavoriteRegions(body: FavoriteRegion[]) {
+  throw new Error("Function not implemented.");
 }

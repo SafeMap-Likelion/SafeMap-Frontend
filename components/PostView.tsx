@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { Image as RNImage } from "react-native";
+import { Image as RNImage, Dimensions, Platform } from "react-native";
 import EmojiSelector from "react-native-emoji-selector";
 import {
   Box,
@@ -22,7 +22,73 @@ import {
   ScrollView,
 } from "@gluestack-ui/themed";
 import { FontAwesome } from "@expo/vector-icons";
-import { ReportDetail } from "@/api/types";
+import { ReportDetail, ReportReaction } from "@/api/types";
+import { getReportReactionList, postReportReaction } from "@/api/apis";
+
+// 간단한 이모지 목록 (Android 폰트 버그 대응)
+const SIMPLE_EMOJIS = [
+  "👍",
+  "👎",
+  "❤️",
+  "😀",
+  "😂",
+  "😢",
+  "😡",
+  "😱",
+  "🔥",
+  "⚠️",
+  "✅",
+  "❌",
+  "👀",
+  "🙏",
+  "💪",
+  "🚨",
+  "🚗",
+  "🏗️",
+  "🌊",
+  "⛑️",
+  "🚓",
+  "🔔",
+  "📍",
+  "⭐",
+  "💯",
+];
+
+// 백엔드 기본 URL (MinIO 이미지 URL 구성용)
+const API_BASE_URL =
+  process.env.EXPO_PUBLIC_API_BASE_URL_MinIO || "http://localhost:8000";
+
+// 이미지 URL을 전체 경로로 변환
+const getFullImageUrl = (photoUrl: string): string => {
+  console.log("📸 원본 photoUrl:", photoUrl);
+  console.log("🌐 API_BASE_URL:", API_BASE_URL);
+
+  if (!photoUrl) return "";
+
+  // localhost:9000 (MinIO 로컬)을 실제 서버 주소로 변환
+  if (
+    photoUrl.includes("localhost:9000") ||
+    photoUrl.includes("127.0.0.1:9000")
+  ) {
+    const convertedUrl = photoUrl.replace(
+      /https?:\/\/(localhost|127\.0\.0\.1):9000/,
+      `${API_BASE_URL}`
+    );
+    console.log("🔄 변환된 URL:", convertedUrl);
+    return convertedUrl;
+  }
+
+  // 이미 절대 URL인 경우 그대로 반환
+  if (photoUrl.startsWith("http://") || photoUrl.startsWith("https://")) {
+    console.log("✅ 절대 URL 그대로 사용:", photoUrl);
+    return photoUrl;
+  }
+
+  // 상대 경로인 경우 기본 URL 추가
+  const fullUrl = `${API_BASE_URL}${photoUrl.startsWith("/") ? "" : "/"}${photoUrl}`;
+  console.log("🔗 상대경로 → 전체 URL:", fullUrl);
+  return fullUrl;
+};
 
 // ✅ 수정됨
 function RiskBadge({ category, level }: { category: string; level: number }) {
@@ -80,18 +146,62 @@ function HeaderWithBadge({
   );
 }
 
-function PostTitle({ reportDetail }: { reportDetail: ReportDetail }) {
+function PostTitle({
+  reportDetail,
+  onEditPress,
+  onDeletePress,
+}: {
+  reportDetail: ReportDetail;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
+}) {
   return (
     <>
-      <Heading
-        fontSize={24}
-        fontWeight="$bold"
-        color="$black"
-        textAlign="left"
+      <HStack
+        justifyContent="space-between"
+        alignItems="center"
         style={{ marginBottom: 10 }}
       >
-        {reportDetail.title}
-      </Heading>
+        <Heading
+          fontSize={24}
+          fontWeight="$bold"
+          color="$black"
+          textAlign="left"
+          flex={1}
+        >
+          {reportDetail.title}
+        </Heading>
+        {(onEditPress || onDeletePress) && (
+          <HStack space="sm">
+            {onEditPress && (
+              <Pressable
+                bg="#1C9DFF"
+                px={10}
+                py={5}
+                borderRadius={20}
+                onPress={onEditPress}
+              >
+                <Text color="$white" fontSize={16} fontWeight="$bold">
+                  수정
+                </Text>
+              </Pressable>
+            )}
+            {onDeletePress && (
+              <Pressable
+                bg="#FF4444"
+                px={10}
+                py={5}
+                borderRadius={20}
+                onPress={onDeletePress}
+              >
+                <Text color="$white" fontSize={16} fontWeight="$bold">
+                  삭제
+                </Text>
+              </Pressable>
+            )}
+          </HStack>
+        )}
+      </HStack>
       <Text fontSize={15} fontWeight="$semibold" style={{ marginBottom: 15 }}>
         📍{reportDetail.place}
         {"\n"}🗓️ {new Date(reportDetail.created_at).toLocaleString()}
@@ -121,53 +231,149 @@ function AutoHeightImage({ uri, style, ...props }: any) {
   );
 }
 
-function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
+function PostContent({
+  reportDetail,
+  reportId,
+  onEditPress,
+  onDeletePress,
+}: {
+  reportDetail: ReportDetail;
+  reportId: string;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
+}) {
   const [isModalVisible, setModalVisible] = useState(false);
-  const [reactions, setReactions] = useState<{ [key: string]: number }>({});
+  const [reactions, setReactions] = useState<ReportReaction[]>([]);
   const [userReactions, setUserReactions] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleEmojiSelect = (emoji: string) => {
+  // 초기 반응 목록 가져오기
+  useEffect(() => {
+    const fetchReactions = async () => {
+      try {
+        const reactionList = await getReportReactionList(reportId);
+        setReactions(reactionList);
+      } catch (error) {
+        console.error("Failed to fetch reactions:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchReactions();
+  }, [reportId]);
+
+  const handleEmojiSelect = async (emoji: string) => {
     setModalVisible(false);
-    setReactions((prev) => ({
-      ...prev,
-      [emoji]: (prev[emoji] || 0) + (userReactions.includes(emoji) ? -1 : 1),
-    }));
-    setUserReactions((prev) =>
-      prev.includes(emoji) ? prev.filter((e) => e !== emoji) : [...prev, emoji]
-    );
+
+    // API 호출 (mocking된 상태)
+    try {
+      await postReportReaction(reportId, { emoji });
+    } catch (error) {
+      console.error("Failed to post reaction:", error);
+    }
+
+    // 이미 내가 반응한 이모지인지 확인
+    const alreadyReacted = userReactions.includes(emoji);
+
+    if (alreadyReacted) {
+      // 이미 반응한 이모지면 취소 (count 감소)
+      setReactions((prev) =>
+        prev
+          .map((r) => (r.emoji === emoji ? { ...r, num: r.num - 1 } : r))
+          .filter((r) => r.num > 0)
+      );
+      setUserReactions((prev) => prev.filter((e) => e !== emoji));
+    } else {
+      // 새 반응 추가
+      const existingReaction = reactions.find((r) => r.emoji === emoji);
+      if (existingReaction) {
+        // 기존 이모지에 count 증가
+        setReactions((prev) =>
+          prev.map((r) => (r.emoji === emoji ? { ...r, num: r.num + 1 } : r))
+        );
+      } else {
+        // 새 이모지 추가
+        setReactions((prev) => [...prev, { emoji, num: 1 }]);
+      }
+      setUserReactions((prev) => [...prev, emoji]);
+    }
   };
 
   return (
     <VStack>
-      <PostTitle reportDetail={reportDetail} />
+      <PostTitle
+        reportDetail={reportDetail}
+        onEditPress={onEditPress}
+        onDeletePress={onDeletePress}
+      />
       <Text fontSize={14} color="$black" style={{ marginBottom: 18 }}>
         {reportDetail.description}
       </Text>
 
-      {reportDetail.photos?.length > 0 && (
+      {reportDetail.photos && reportDetail.photos.length > 0 ? (
+        <VStack space="sm" style={{ marginBottom: 10 }}>
+          {reportDetail.photos.map((photo, index) => (
+            <Box key={index}>
+              <AutoHeightImage
+                uri={getFullImageUrl(photo.photo)}
+                style={{ borderRadius: 15 }}
+                resizeMode="cover"
+              />
+            </Box>
+          ))}
+        </VStack>
+      ) : (
         <Box style={{ marginBottom: 10 }}>
-          <AutoHeightImage
-            uri={reportDetail.photos[0].photo}
-            style={{ borderRadius: 15 }}
-            resizeMode="cover"
-          />
+          <Text color="#929292" textAlign="center" py={20}>
+            등록된 사진이 없습니다
+          </Text>
         </Box>
       )}
 
-      <HStack justifyContent="flex-end" flexWrap="wrap" style={{ gap: 8 }}>
-        {Object.entries(reactions).map(([emoji, count]) => (
-          <Pressable key={emoji} onPress={() => handleEmojiSelect(emoji)}>
-            <Badge backgroundColor="#F3F3F3" borderRadius={15}>
-              <BadgeText color="#565656" fontSize={11}>
-                {emoji} {count}
-              </BadgeText>
-            </Badge>
-          </Pressable>
-        ))}
+      {/* Slack 스타일 반응 표시 */}
+      <HStack flexWrap="wrap" style={{ gap: 8, marginTop: 10 }}>
+        {reactions.map((reaction) => {
+          const isMyReaction = userReactions.includes(reaction.emoji);
+          return (
+            <Pressable
+              key={reaction.emoji}
+              onPress={() => handleEmojiSelect(reaction.emoji)}
+            >
+              <Badge
+                backgroundColor={isMyReaction ? "#E3F2FD" : "#F3F3F3"}
+                borderRadius={20}
+                borderWidth={isMyReaction ? 1 : 0}
+                borderColor={isMyReaction ? "#1C9DFF" : "transparent"}
+                style={{ paddingHorizontal: 10, paddingVertical: 6 }}
+              >
+                <HStack alignItems="center" space="xs">
+                  <Text fontSize={16}>{reaction.emoji}</Text>
+                  <Text
+                    fontSize={13}
+                    fontWeight={isMyReaction ? "$bold" : "$normal"}
+                    color={isMyReaction ? "#1C9DFF" : "#565656"}
+                  >
+                    {reaction.num}
+                  </Text>
+                </HStack>
+              </Badge>
+            </Pressable>
+          );
+        })}
+        {/* 반응 추가 버튼 */}
         <Pressable onPress={() => setModalVisible(true)}>
-          <Text fontSize={28} color="#929292" fontWeight="300">
-            +
-          </Text>
+          <Badge
+            backgroundColor="#F3F3F3"
+            borderRadius={20}
+            style={{ paddingHorizontal: 12, paddingVertical: 6 }}
+          >
+            <HStack alignItems="center" space="xs">
+              <FontAwesome name="smile-o" size={16} color="#929292" />
+              <Text fontSize={16} color="#929292">
+                +
+              </Text>
+            </HStack>
+          </Badge>
         </Pressable>
       </HStack>
 
@@ -179,14 +385,44 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
               <Icon as={CloseIcon} />
             </ModalCloseButton>
           </ModalHeader>
-          <ModalBody style={{ padding: 0 }}>
-            <Box style={{ height: 400 }}>
-              <EmojiSelector
-                onEmojiSelected={handleEmojiSelect}
-                showSearchBar={false}
-                columns={8}
-              />
-            </Box>
+          <ModalBody style={{ padding: 10 }}>
+            {Platform.OS === "android" ? (
+              /* Android: 간단한 이모지 그리드 (FontSize 버그 회피) */
+              <HStack
+                flexWrap="wrap"
+                justifyContent="center"
+                style={{ gap: 8 }}
+              >
+                {SIMPLE_EMOJIS.map((emoji) => (
+                  <Pressable
+                    key={emoji}
+                    onPress={() => handleEmojiSelect(emoji)}
+                    style={{
+                      width: 44,
+                      height: 44,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      backgroundColor: "#F5F5F5",
+                      borderRadius: 8,
+                    }}
+                  >
+                    <Text fontSize={24}>{emoji}</Text>
+                  </Pressable>
+                ))}
+              </HStack>
+            ) : (
+              /* iOS: EmojiSelector 사용 */
+              <Box style={{ height: 400 }}>
+                <EmojiSelector
+                  onEmojiSelected={handleEmojiSelect}
+                  showSearchBar={false}
+                  showHistory={false}
+                  showSectionTitles={false}
+                  showTabs={false}
+                  columns={8}
+                />
+              </Box>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
@@ -196,10 +432,16 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
 
 export default function PostView({
   reportDetail,
+  reportId,
   onBackPress,
+  onEditPress,
+  onDeletePress,
 }: {
   reportDetail: ReportDetail;
+  reportId: string;
   onBackPress?: () => void;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
 }) {
   if (!reportDetail) return null;
   return (
@@ -216,7 +458,12 @@ export default function PostView({
           onBackPress={onBackPress}
         />
       </Box>
-      <PostContent reportDetail={reportDetail} />
+      <PostContent
+        reportDetail={reportDetail}
+        reportId={reportId}
+        onEditPress={onEditPress}
+        onDeletePress={onDeletePress}
+      />
     </ScrollView>
   );
 }

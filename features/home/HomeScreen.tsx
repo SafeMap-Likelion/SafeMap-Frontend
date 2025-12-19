@@ -48,14 +48,24 @@ interface MapRef {
   updateUserMarker: (lat: number, lon: number) => void;
 }
 
+// 서울대입구역 좌표 (초기 지도 중심)
+const INITIAL_LOCATION = {
+  latitude: 37.48482459,
+  longitude: 126.95063877,
+};
+
 export default function HomeScreen() {
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
-  } | null>(null);
+  } | null>(INITIAL_LOCATION);
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [nearEvents, setNearEvents] = useState<NearEvent[]>([]);
   const [dangerZones, setDangerZones] = useState<DangerZone[]>([]);
+  const [addrA, setAddrA] = useState<string>("");
+  const [addrB, setAddrB] = useState<string>("");
+  const [addrC, setAddrC] = useState<string>(""); // 법정동
+  const [addrCAdmin, setAddrCAdmin] = useState<string>(""); // 행정동
   const router = useRouter();
 
   const mapRef = useRef<MapRef>(null);
@@ -64,6 +74,9 @@ export default function HomeScreen() {
   );
   const dangerZonesRef = useRef<DangerZone[]>([]);
   const insideZonesRef = useRef<{ [key: string]: boolean }>({});
+  // AppState 중복 호출 방지를 위한 ref
+  const appStateRef = useRef<string>(AppState.currentState);
+  const isBackgroundTrackingRef = useRef<boolean>(false);
 
   // 거리 계산 (Haversine 공식)
   const calculateDistance = (
@@ -116,7 +129,8 @@ export default function HomeScreen() {
 
   const getAddress = async (latitude: number, longitude: number) => {
     try {
-      const response = await fetch(
+      // 1. coord2address API로 전체 주소 가져오기
+      const addressResponse = await fetch(
         `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
         {
           headers: {
@@ -124,19 +138,86 @@ export default function HomeScreen() {
           },
         }
       );
-      const data = await response.json();
-      if (data.documents && data.documents.length > 0) {
-        const doc = data.documents[0];
-        const fetchedAddress = doc.address.address_name;
+      const addressData = await addressResponse.json();
+
+      // 2. coord2regioncode API로 행정동/법정동 정확히 가져오기
+      const regionResponse = await fetch(
+        `https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${longitude}&y=${latitude}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const regionData = await regionResponse.json();
+
+      // 행정동 (region_type: "H") 찾기
+      let adminDong = ""; // 행정동
+      let legalDong = ""; // 법정동
+      if (regionData.documents && regionData.documents.length > 0) {
+        for (const region of regionData.documents) {
+          if (region.region_type === "H") {
+            // 행정동
+            adminDong = region.region_3depth_name;
+            console.log("📍 행정동:", adminDong);
+          } else if (region.region_type === "B") {
+            // 법정동
+            legalDong = region.region_3depth_name;
+            console.log("📍 법정동:", legalDong);
+          }
+        }
+      }
+
+      if (addressData.documents && addressData.documents.length > 0) {
+        const doc = addressData.documents[0];
+        const fetchedAddress = doc.address?.address_name || "";
         setAddress(fetchedAddress);
 
-        const dong =
-          (doc.road_address && doc.road_address.region_3depth_h_name) ||
-          (doc.address && doc.address.region_3depth_h_name) ||
-          (doc.road_address && doc.road_address.region_3depth_name) ||
-          (doc.address && doc.address.region_3depth_name);
+        // 주소 3단계 정보 추출 (법정동 기준)
+        const addrInfo = doc.address || {};
+        const roadAddrInfo = doc.road_address || {};
+
+        const addr1 =
+          addrInfo.region_1depth_name || roadAddrInfo.region_1depth_name || "";
+        const addr2 =
+          addrInfo.region_2depth_name || roadAddrInfo.region_2depth_name || "";
+        const addr3 =
+          addrInfo.region_3depth_name || roadAddrInfo.region_3depth_name || "";
+
+        console.log("📍 원본 주소:", { addr1, addr2, addr3 });
+
+        // 시/도 이름 변환 (백엔드 API 형식에 맞춤)
+        // "서울특별시" -> "서울시", "부산광역시" -> "부산시", "서울" -> "서울시"
+        let formattedAddr1 = addr1;
+        if (addr1.includes("특별시") || addr1.includes("광역시")) {
+          formattedAddr1 = addr1
+            .replace("특별시", "시")
+            .replace("광역시", "시");
+        } else if (
+          addr1 === "서울" ||
+          addr1 === "부산" ||
+          addr1 === "대구" ||
+          addr1 === "인천" ||
+          addr1 === "광주" ||
+          addr1 === "대전" ||
+          addr1 === "울산"
+        ) {
+          formattedAddr1 = addr1 + "시";
+        }
+        // 세종, 경기도, 강원도 등은 그대로 유지
+
+        console.log("📍 변환된 addr_a:", formattedAddr1);
+
+        setAddrA(formattedAddr1);
+        setAddrB(addr2);
+        setAddrC(addr3); // 법정동
+        setAddrCAdmin(adminDong || addr3); // 행정동 (없으면 법정동 사용)
+
+        // 행정동 우선 사용 (coord2regioncode API에서 가져온 정확한 행정동)
+        const dong = adminDong || legalDong || addr3;
         if (dong) {
           setDongName(dong);
+          console.log("📍 표시할 동:", dong, "(행정동 우선)");
         }
       }
     } catch (error) {
@@ -164,11 +245,21 @@ export default function HomeScreen() {
   // 앱 상태 감지 (Foreground/Background)
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {
-      if (nextAppState === "background") {
-        console.log("📱 앱이 백그라운드로 전환 - 백그라운드 추적 시작");
+      // 이전 상태와 동일하면 무시 (중복 호출 방지)
+      if (appStateRef.current === nextAppState) {
+        return;
+      }
+
+      const previousState = appStateRef.current;
+      appStateRef.current = nextAppState;
+
+      if (nextAppState === "background" && !isBackgroundTrackingRef.current) {
+        console.log("📱 앞이 백그라운드로 전환 - 백그라운드 추적 시작");
+        isBackgroundTrackingRef.current = true;
         startBackgroundLocationTracking();
-      } else if (nextAppState === "active") {
-        console.log("📱 앱이 포그라운드로 전환 - 백그라운드 추적 중지");
+      } else if (nextAppState === "active" && previousState === "background") {
+        console.log("📱 앞이 포그라운드로 전환 - 백그라운드 추적 중지");
+        isBackgroundTrackingRef.current = false;
         stopBackgroundLocationTracking();
       }
     });
@@ -210,14 +301,17 @@ export default function HomeScreen() {
   useEffect(() => {
     const startLocationTracking = async () => {
       try {
-        // 초기 위치 가져오기
-        const { coords } = await Location.getCurrentPositionAsync({});
+        // 초기 위치 가져오기 (지도 중심은 이동하지 않고 마커만 표시)
+        const { coords } = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced, // 더 빠른 위치 수신
+        });
         console.log("Current location fetched:", coords);
-        const initialLocation = {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        };
-        setLocation(initialLocation);
+
+        // 사용자 위치 마커만 업데이트 (지도 중심은 서울대입구역 유지)
+        if (mapRef.current) {
+          mapRef.current.updateUserMarker(coords.latitude, coords.longitude);
+        }
+
         getAddress(coords.latitude, coords.longitude);
         await loadNearEvents(coords.latitude, coords.longitude);
 
@@ -318,6 +412,7 @@ export default function HomeScreen() {
   const [dongName, setDongName] = useState("");
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([
     "🚗 교통",
     "🌪️ 자연 재해",
@@ -327,6 +422,51 @@ export default function HomeScreen() {
     "⚙️ 기타/특수",
   ]);
   const [showDangerZones, setShowDangerZones] = useState(false);
+
+  // 주소 검색으로 지도 이동 (카카오맵 주소 검색 API 사용)
+  const handleLocationSelect = async (selectedAddress: string) => {
+    try {
+      console.log("📍 주소 검색:", selectedAddress);
+
+      // 카카오맵 주소 검색 API
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(selectedAddress)}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data.documents && data.documents.length > 0) {
+        const { x, y } = data.documents[0]; // x: 경도, y: 위도
+        const latitude = parseFloat(y);
+        const longitude = parseFloat(x);
+
+        console.log("📍 검색 결과 좌표:", { latitude, longitude });
+
+        // 지도 중심 이동
+        setLocation({ latitude, longitude });
+        if (mapRef.current) {
+          mapRef.current.recenter(latitude, longitude);
+        }
+
+        // 주소 정보 및 주변 이벤트 갱신
+        getAddress(latitude, longitude);
+        await loadNearEvents(latitude, longitude);
+      } else {
+        console.error("주소 검색 결과 없음");
+        Alert.alert(
+          "검색 실패",
+          "해당 주소를 찾을 수 없습니다. 자동완성된 항목 중에서 선택해주세요."
+        );
+      }
+    } catch (error) {
+      console.error("주소 검색 실패:", error);
+      Alert.alert("오류", "주소 검색 중 오류가 발생했습니다.");
+    }
+  };
 
   const handleCenterChangeCoordinates = async (coords: {
     latitude: number;
@@ -357,6 +497,7 @@ export default function HomeScreen() {
     try {
       const detail = await getReportDetail(reportId);
       setReportDetail(detail);
+      setSelectedReportId(reportId); // report_id 저장
       setDetailVisible(true);
     } catch (e) {
       console.error("report detail fetch error", e);
@@ -408,6 +549,7 @@ export default function HomeScreen() {
           <MapControlPanel
             dongName={dongName}
             onCategoryChange={setSelectedCategories}
+            onLocationSelect={handleLocationSelect}
           />
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>
@@ -447,7 +589,12 @@ export default function HomeScreen() {
             onPress={() =>
               router.push({
                 pathname: "/(main)/news-page",
-                params: { dongName: dongName },
+                params: {
+                  dongName: dongName,
+                  addr_a: addrA,
+                  addr_b: addrB,
+                  addr_c: addrCAdmin, // 행정동으로 전달
+                },
               })
             }
           >
@@ -465,10 +612,14 @@ export default function HomeScreen() {
       </Box>
 
       {/* ✅ 상세 뷰 (슬라이드 업) */}
-      {isDetailVisible && reportDetail && (
+      {isDetailVisible && reportDetail && selectedReportId && (
         <PostDetailViewScreen
           reportDetail={reportDetail}
-          onClose={() => setDetailVisible(false)}
+          reportId={selectedReportId}
+          onClose={() => {
+            setDetailVisible(false);
+            setSelectedReportId(null);
+          }}
         />
       )}
 
