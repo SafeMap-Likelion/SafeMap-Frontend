@@ -48,11 +48,17 @@ interface MapRef {
   updateUserMarker: (lat: number, lon: number) => void;
 }
 
+// 서울대입구역 좌표 (초기 지도 중심)
+const INITIAL_LOCATION = {
+  latitude: 37.48482459,
+  longitude: 126.95063877,
+};
+
 export default function HomeScreen() {
   const [location, setLocation] = useState<{
     latitude: number;
     longitude: number;
-  } | null>(null);
+  } | null>(INITIAL_LOCATION);
   const [address, setAddress] = useState<string | undefined>(undefined);
   const [nearEvents, setNearEvents] = useState<NearEvent[]>([]);
   const [dangerZones, setDangerZones] = useState<DangerZone[]>([]);
@@ -247,14 +253,17 @@ export default function HomeScreen() {
   useEffect(() => {
     const startLocationTracking = async () => {
       try {
-        // 초기 위치 가져오기
-        const { coords } = await Location.getCurrentPositionAsync({});
+        // 초기 위치 가져오기 (지도 중심은 이동하지 않고 마커만 표시)
+        const { coords } = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced, // 더 빠른 위치 수신
+        });
         console.log("Current location fetched:", coords);
-        const initialLocation = {
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-        };
-        setLocation(initialLocation);
+
+        // 사용자 위치 마커만 업데이트 (지도 중심은 서울대입구역 유지)
+        if (mapRef.current) {
+          mapRef.current.updateUserMarker(coords.latitude, coords.longitude);
+        }
+
         getAddress(coords.latitude, coords.longitude);
         await loadNearEvents(coords.latitude, coords.longitude);
 

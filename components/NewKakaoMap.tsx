@@ -170,14 +170,15 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
 
               map = new kakao.maps.Map(mapContainer, mapOption);
 
-              // 중앙 빨간 마커
+              // 중앙 빨간 마커 (초기에는 숨김 - 사용자 위치 파악 후 표시)
               centerMarker = new kakao.maps.CustomOverlay({
                 position: map.getCenter(),
                 content: '<div class="custom-overlay"></div>',
                 xAnchor: 0.5,
                 yAnchor: 0.5,
               });
-              centerMarker.setMap(map);
+              // 초기에는 마커를 표시하지 않음 (updateUserMarker 호출 시 표시)
+              // centerMarker.setMap(map);  -- 이 줄을 제거하여 초기에 마커 숨김
 
               // 초기에는 마커 없이 시작 (nearEvents는 useEffect를 통해 전달됨)
               updateEventMarkers([]);
@@ -196,6 +197,10 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
                     const { lat, lon } = message.payload;
                     const newPosition = new kakao.maps.LatLng(lat, lon);
                     centerMarker.setPosition(newPosition);
+                    // 마커가 숨겨져 있으면 표시
+                    if (!centerMarker.getMap()) {
+                      centerMarker.setMap(map);
+                    }
                   }
                   if (message.type === 'updateMarkers') {
                     updateEventMarkers(message.payload);
