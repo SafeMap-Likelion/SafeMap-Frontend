@@ -166,6 +166,7 @@ export default function PostDetailViewScreen({
         {/* ✅ props 전달 (자신의 신고인 경우만 수정/삭제 버튼 표시) */}
         <PostView
           reportDetail={reportDetail}
+          reportId={reportId}
           onBackPress={handleBackdropPress}
           onEditPress={isMyPost ? handleEdit : undefined}
           onDeletePress={isMyPost ? handleDelete : undefined}
