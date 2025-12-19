@@ -423,6 +423,51 @@ export default function HomeScreen() {
   ]);
   const [showDangerZones, setShowDangerZones] = useState(false);
 
+  // 주소 검색으로 지도 이동 (카카오맵 주소 검색 API 사용)
+  const handleLocationSelect = async (selectedAddress: string) => {
+    try {
+      console.log("📍 주소 검색:", selectedAddress);
+
+      // 카카오맵 주소 검색 API
+      const response = await fetch(
+        `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(selectedAddress)}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data.documents && data.documents.length > 0) {
+        const { x, y } = data.documents[0]; // x: 경도, y: 위도
+        const latitude = parseFloat(y);
+        const longitude = parseFloat(x);
+
+        console.log("📍 검색 결과 좌표:", { latitude, longitude });
+
+        // 지도 중심 이동
+        setLocation({ latitude, longitude });
+        if (mapRef.current) {
+          mapRef.current.recenter(latitude, longitude);
+        }
+
+        // 주소 정보 및 주변 이벤트 갱신
+        getAddress(latitude, longitude);
+        await loadNearEvents(latitude, longitude);
+      } else {
+        console.error("주소 검색 결과 없음");
+        Alert.alert(
+          "검색 실패",
+          "해당 주소를 찾을 수 없습니다. 자동완성된 항목 중에서 선택해주세요."
+        );
+      }
+    } catch (error) {
+      console.error("주소 검색 실패:", error);
+      Alert.alert("오류", "주소 검색 중 오류가 발생했습니다.");
+    }
+  };
+
   const handleCenterChangeCoordinates = async (coords: {
     latitude: number;
     longitude: number;
@@ -504,6 +549,7 @@ export default function HomeScreen() {
           <MapControlPanel
             dongName={dongName}
             onCategoryChange={setSelectedCategories}
+            onLocationSelect={handleLocationSelect}
           />
         </Box>
         <HStack space="sm" justifyContent="center" mb={10}>

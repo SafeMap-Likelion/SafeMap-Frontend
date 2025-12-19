@@ -15,11 +15,13 @@ if (Platform.OS === "android") {
 interface MapControlPanelProps {
   dongName?: string;
   onCategoryChange?: (categories: string[]) => void;
+  onLocationSelect?: (location: string) => void;
 }
 
 export default function MapControlPanel({
   dongName,
   onCategoryChange,
+  onLocationSelect,
 }: MapControlPanelProps) {
   const categories = [
     "🚗 교통",
@@ -85,6 +87,7 @@ export default function MapControlPanel({
           showLeftIcon
           showRightIcon
           showListOnInput
+          onSelect={onLocationSelect}
         />
 
         {/* 카테고리 선택 영역 */}

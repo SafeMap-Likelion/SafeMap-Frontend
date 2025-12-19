@@ -58,7 +58,7 @@ export async function getDangerzoneList(): Promise<DangerZone[]> {
     console.log("Danger zones response:", response.data);
     return response.data.dzs ?? [];
   } catch (error) {
-    console.error("Failed to fetch danger zones:", error);
+    // 네트워크 오류 시 조용히 빈 배열 반환
     return [];
   }
 }
@@ -72,11 +72,10 @@ export async function getNearEventList(
 ): Promise<NearEvent[]> {
   const URL = `/api/near_events/?latitude=${latitude}&longitude=${longitude}&map_level=${map_level}&code=${code}`;
   try {
-    console.log("Fetching near events with URL:", URL);
     const response = await api.get<{ results: NearEvent[] }>(URL);
     return response.data.results ?? [];
   } catch (error) {
-    console.error("Failed to fetch near events:", error);
+    // 네트워크 오류 시 조용히 빈 배열 반환
     return [];
   }
 }
