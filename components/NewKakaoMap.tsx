@@ -165,7 +165,7 @@ const NewKakaoMap = forwardRef<MapRef, KakaoMapProps>((props, ref) => {
               const mapContainer = document.getElementById('map');
               const mapOption = {
                 center: new kakao.maps.LatLng(${latitude}, ${longitude}),
-                level: 3,
+                level: 5,
               };
 
               map = new kakao.maps.Map(mapContainer, mapOption);

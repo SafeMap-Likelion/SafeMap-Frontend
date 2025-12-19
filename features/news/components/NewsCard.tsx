@@ -1,19 +1,10 @@
 import React from "react";
-import {
-  HStack,
-  VStack,
-  Text,
-  Image,
-  Box,
-  Pressable,
-} from "@gluestack-ui/themed";
+import { HStack, VStack, Text, Box, Pressable } from "@gluestack-ui/themed";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 
-const newsImages: { [key: string]: any } = {
-  "dog.jpg": require("@/dummy/dummy_newsphotos/dog.jpg"),
-  "kitten.jpg": require("@/dummy/dummy_newsphotos/kitten.jpg"),
-  "llama.jpg": require("@/dummy/dummy_newsphotos/llama.jpg"),
-};
+// 기본 이미지 (photo가 없을 경우)
+const defaultImage = require("@/assets/images/icon.png");
 
 export default function NewsCard({ item }: any) {
   const router = useRouter();
@@ -25,6 +16,9 @@ export default function NewsCard({ item }: any) {
       params: { id: item.news_id },
     });
   };
+
+  // photo가 URL인 경우 그대로 사용, 없으면 기본 이미지
+  const imageSource = item.photo ? { uri: item.photo } : defaultImage;
 
   return (
     <Pressable onPress={handlePress}>
@@ -65,11 +59,10 @@ export default function NewsCard({ item }: any) {
         </VStack>
         <Box ml="$3">
           <Image
-            source={newsImages[item.photo]}
-            alt="thumbnail"
-            width={91}
-            height={68}
-            rounded="$lg"
+            source={imageSource}
+            style={{ width: 91, height: 68, borderRadius: 8 }}
+            contentFit="cover"
+            cachePolicy="memory-disk"
           />
         </Box>
       </HStack>

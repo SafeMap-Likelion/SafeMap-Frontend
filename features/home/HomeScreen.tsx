@@ -64,7 +64,8 @@ export default function HomeScreen() {
   const [dangerZones, setDangerZones] = useState<DangerZone[]>([]);
   const [addrA, setAddrA] = useState<string>("");
   const [addrB, setAddrB] = useState<string>("");
-  const [addrC, setAddrC] = useState<string>("");
+  const [addrC, setAddrC] = useState<string>(""); // 법정동
+  const [addrCAdmin, setAddrCAdmin] = useState<string>(""); // 행정동
   const router = useRouter();
 
   const mapRef = useRef<MapRef>(null);
@@ -128,7 +129,8 @@ export default function HomeScreen() {
 
   const getAddress = async (latitude: number, longitude: number) => {
     try {
-      const response = await fetch(
+      // 1. coord2address API로 전체 주소 가져오기
+      const addressResponse = await fetch(
         `https://dapi.kakao.com/v2/local/geo/coord2address.json?x=${longitude}&y=${latitude}`,
         {
           headers: {
@@ -136,40 +138,86 @@ export default function HomeScreen() {
           },
         }
       );
-      const data = await response.json();
-      if (data.documents && data.documents.length > 0) {
-        const doc = data.documents[0];
-        const fetchedAddress = doc.address.address_name;
+      const addressData = await addressResponse.json();
+
+      // 2. coord2regioncode API로 행정동/법정동 정확히 가져오기
+      const regionResponse = await fetch(
+        `https://dapi.kakao.com/v2/local/geo/coord2regioncode.json?x=${longitude}&y=${latitude}`,
+        {
+          headers: {
+            Authorization: `KakaoAK ${process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY}`,
+          },
+        }
+      );
+      const regionData = await regionResponse.json();
+
+      // 행정동 (region_type: "H") 찾기
+      let adminDong = ""; // 행정동
+      let legalDong = ""; // 법정동
+      if (regionData.documents && regionData.documents.length > 0) {
+        for (const region of regionData.documents) {
+          if (region.region_type === "H") {
+            // 행정동
+            adminDong = region.region_3depth_name;
+            console.log("📍 행정동:", adminDong);
+          } else if (region.region_type === "B") {
+            // 법정동
+            legalDong = region.region_3depth_name;
+            console.log("📍 법정동:", legalDong);
+          }
+        }
+      }
+
+      if (addressData.documents && addressData.documents.length > 0) {
+        const doc = addressData.documents[0];
+        const fetchedAddress = doc.address?.address_name || "";
         setAddress(fetchedAddress);
 
-        // 주소 3단계 정보 추출
-        const addressData = doc.address || {};
-        const roadAddressData = doc.road_address || {};
+        // 주소 3단계 정보 추출 (법정동 기준)
+        const addrInfo = doc.address || {};
+        const roadAddrInfo = doc.road_address || {};
 
         const addr1 =
-          addressData.region_1depth_name ||
-          roadAddressData.region_1depth_name ||
-          "";
+          addrInfo.region_1depth_name || roadAddrInfo.region_1depth_name || "";
         const addr2 =
-          addressData.region_2depth_name ||
-          roadAddressData.region_2depth_name ||
-          "";
+          addrInfo.region_2depth_name || roadAddrInfo.region_2depth_name || "";
         const addr3 =
-          addressData.region_3depth_name ||
-          roadAddressData.region_3depth_name ||
-          "";
+          addrInfo.region_3depth_name || roadAddrInfo.region_3depth_name || "";
 
-        setAddrA(addr1);
+        console.log("📍 원본 주소:", { addr1, addr2, addr3 });
+
+        // 시/도 이름 변환 (백엔드 API 형식에 맞춤)
+        // "서울특별시" -> "서울시", "부산광역시" -> "부산시", "서울" -> "서울시"
+        let formattedAddr1 = addr1;
+        if (addr1.includes("특별시") || addr1.includes("광역시")) {
+          formattedAddr1 = addr1
+            .replace("특별시", "시")
+            .replace("광역시", "시");
+        } else if (
+          addr1 === "서울" ||
+          addr1 === "부산" ||
+          addr1 === "대구" ||
+          addr1 === "인천" ||
+          addr1 === "광주" ||
+          addr1 === "대전" ||
+          addr1 === "울산"
+        ) {
+          formattedAddr1 = addr1 + "시";
+        }
+        // 세종, 경기도, 강원도 등은 그대로 유지
+
+        console.log("📍 변환된 addr_a:", formattedAddr1);
+
+        setAddrA(formattedAddr1);
         setAddrB(addr2);
-        setAddrC(addr3);
+        setAddrC(addr3); // 법정동
+        setAddrCAdmin(adminDong || addr3); // 행정동 (없으면 법정동 사용)
 
-        const dong =
-          (doc.road_address && doc.road_address.region_3depth_h_name) ||
-          (doc.address && doc.address.region_3depth_h_name) ||
-          (doc.road_address && doc.road_address.region_3depth_name) ||
-          (doc.address && doc.address.region_3depth_name);
+        // 행정동 우선 사용 (coord2regioncode API에서 가져온 정확한 행정동)
+        const dong = adminDong || legalDong || addr3;
         if (dong) {
           setDongName(dong);
+          console.log("📍 표시할 동:", dong, "(행정동 우선)");
         }
       }
     } catch (error) {
@@ -364,6 +412,7 @@ export default function HomeScreen() {
   const [dongName, setDongName] = useState("");
   const [isDetailVisible, setDetailVisible] = useState(false);
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([
     "🚗 교통",
     "🌪️ 자연 재해",
@@ -403,6 +452,7 @@ export default function HomeScreen() {
     try {
       const detail = await getReportDetail(reportId);
       setReportDetail(detail);
+      setSelectedReportId(reportId); // report_id 저장
       setDetailVisible(true);
     } catch (e) {
       console.error("report detail fetch error", e);
@@ -497,7 +547,7 @@ export default function HomeScreen() {
                   dongName: dongName,
                   addr_a: addrA,
                   addr_b: addrB,
-                  addr_c: addrC,
+                  addr_c: addrCAdmin, // 행정동으로 전달
                 },
               })
             }
@@ -516,10 +566,14 @@ export default function HomeScreen() {
       </Box>
 
       {/* ✅ 상세 뷰 (슬라이드 업) */}
-      {isDetailVisible && reportDetail && (
+      {isDetailVisible && reportDetail && selectedReportId && (
         <PostDetailViewScreen
           reportDetail={reportDetail}
-          onClose={() => setDetailVisible(false)}
+          reportId={selectedReportId}
+          onClose={() => {
+            setDetailVisible(false);
+            setSelectedReportId(null);
+          }}
         />
       )}
 
