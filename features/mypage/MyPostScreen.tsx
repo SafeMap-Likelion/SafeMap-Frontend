@@ -1,9 +1,8 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { FlatList, ActivityIndicator } from "react-native";
 import {
   Box,
   Text,
-  Image,
   Heading,
   HStack,
   VStack,
@@ -11,8 +10,10 @@ import {
   Pressable,
   CheckCircleIcon,
 } from "@gluestack-ui/themed";
+import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { getUserReportList } from "@/api/apis";
 import { ReportAbstract } from "@/api/types";
 
@@ -104,13 +105,15 @@ const EventCard: React.FC<{
       }
     >
       <HStack space="md" alignItems="center">
-        {/* 이미지 */}
+        {/* 이미지 - expo-image로 캐싱 적용 */}
         <Image
           source={{ uri: getFullImageUrl(event.photo) }}
           alt="Event Image"
-          w={80}
-          h={109}
-          borderRadius="$lg"
+          style={{ width: 80, height: 109, borderRadius: 10 }}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          placeholder={DEFAULT_IMAGE}
+          transition={200}
         />
 
         {/* 텍스트 컨텐츠 */}
@@ -184,23 +187,25 @@ const MyPostScreen = () => {
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set());
   const [pendingSort, setPendingSort] = useState<Set<string>>(new Set());
 
-  // API에서 데이터 가져오기
-  useEffect(() => {
-    const loadPosts = async () => {
-      try {
-        setIsLoading(true);
-        const reportList = await getUserReportList();
-        setPosts(reportList);
-        console.log("내 신고 목록 로드 완료:", reportList);
-      } catch (error) {
-        console.error("내 신고 목록 로드 실패:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // 화면에 포커스될 때마다 데이터 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      const loadPosts = async () => {
+        try {
+          setIsLoading(true);
+          const reportList = await getUserReportList();
+          setPosts(reportList);
+          console.log("내 신고 목록 로드 완료:", reportList);
+        } catch (error) {
+          console.error("내 신고 목록 로드 실패:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-    loadPosts();
-  }, []);
+      loadPosts();
+    }, [])
+  );
 
   // 체크 토글 함수
   const toggleCheck = (id: string) => {

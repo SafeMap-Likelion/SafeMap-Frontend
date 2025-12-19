@@ -10,10 +10,10 @@ import { useLocalSearchParams } from "expo-router";
 
 export default function NewsScreen() {
   const params = useLocalSearchParams();
-  const dongName = (params.dongName as string) || "봉천동";
-  const addrA = (params.addr_a as string) || "서울특별시";
+  const dongName = (params.dongName as string) || "낙성대동";
+  const addrA = (params.addr_a as string) || "서울시";
   const addrB = (params.addr_b as string) || "관악구";
-  const addrC = (params.addr_c as string) || "봉천동";
+  const addrC = (params.addr_c as string) || "낙성대동";
   const [newsData, setNewsData] = useState<NewsAbstract[]>([]);
   const [loading, setLoading] = useState(true);
 

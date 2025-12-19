@@ -116,18 +116,62 @@ function HeaderWithBadge({
   );
 }
 
-function PostTitle({ reportDetail }: { reportDetail: ReportDetail }) {
+function PostTitle({
+  reportDetail,
+  onEditPress,
+  onDeletePress,
+}: {
+  reportDetail: ReportDetail;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
+}) {
   return (
     <>
-      <Heading
-        fontSize={24}
-        fontWeight="$bold"
-        color="$black"
-        textAlign="left"
+      <HStack
+        justifyContent="space-between"
+        alignItems="center"
         style={{ marginBottom: 10 }}
       >
-        {reportDetail.title}
-      </Heading>
+        <Heading
+          fontSize={24}
+          fontWeight="$bold"
+          color="$black"
+          textAlign="left"
+          flex={1}
+        >
+          {reportDetail.title}
+        </Heading>
+        {(onEditPress || onDeletePress) && (
+          <HStack space="sm">
+            {onEditPress && (
+              <Pressable
+                bg="#1C9DFF"
+                px={10}
+                py={5}
+                borderRadius={20}
+                onPress={onEditPress}
+              >
+                <Text color="$white" fontSize={16} fontWeight="$bold">
+                  수정
+                </Text>
+              </Pressable>
+            )}
+            {onDeletePress && (
+              <Pressable
+                bg="#FF4444"
+                px={10}
+                py={5}
+                borderRadius={20}
+                onPress={onDeletePress}
+              >
+                <Text color="$white" fontSize={16} fontWeight="$bold">
+                  삭제
+                </Text>
+              </Pressable>
+            )}
+          </HStack>
+        )}
+      </HStack>
       <Text fontSize={15} fontWeight="$semibold" style={{ marginBottom: 15 }}>
         📍{reportDetail.place}
         {"\n"}🗓️ {new Date(reportDetail.created_at).toLocaleString()}
@@ -157,7 +201,15 @@ function AutoHeightImage({ uri, style, ...props }: any) {
   );
 }
 
-function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
+function PostContent({
+  reportDetail,
+  onEditPress,
+  onDeletePress,
+}: {
+  reportDetail: ReportDetail;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
+}) {
   const [isModalVisible, setModalVisible] = useState(false);
   const [reactions, setReactions] = useState<{ [key: string]: number }>({});
   const [userReactions, setUserReactions] = useState<string[]>([]);
@@ -175,7 +227,11 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
 
   return (
     <VStack>
-      <PostTitle reportDetail={reportDetail} />
+      <PostTitle
+        reportDetail={reportDetail}
+        onEditPress={onEditPress}
+        onDeletePress={onDeletePress}
+      />
       <Text fontSize={14} color="$black" style={{ marginBottom: 18 }}>
         {reportDetail.description}
       </Text>
@@ -243,9 +299,13 @@ function PostContent({ reportDetail }: { reportDetail: ReportDetail }) {
 export default function PostView({
   reportDetail,
   onBackPress,
+  onEditPress,
+  onDeletePress,
 }: {
   reportDetail: ReportDetail;
   onBackPress?: () => void;
+  onEditPress?: () => void;
+  onDeletePress?: () => void;
 }) {
   if (!reportDetail) return null;
   return (
@@ -262,7 +322,11 @@ export default function PostView({
           onBackPress={onBackPress}
         />
       </Box>
-      <PostContent reportDetail={reportDetail} />
+      <PostContent
+        reportDetail={reportDetail}
+        onEditPress={onEditPress}
+        onDeletePress={onDeletePress}
+      />
     </ScrollView>
   );
 }

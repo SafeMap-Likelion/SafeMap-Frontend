@@ -88,11 +88,11 @@ export async function getNewsList(
   addr_c: string
 ): Promise<NewsAbstract[]> {
   const URL = `/api/news/list/?addr_a=${addr_a}&addr_b=${addr_b}&addr_c=${addr_c}`;
-
+  console.log("Fetching news list with URL:", URL);
   try {
-    const response = await api.get<{ results: NewsAbstract[] }>(URL);
+    const response = await api.get<{ news: NewsAbstract[] }>(URL);
     console.log("News list response:", response.data);
-    return response.data.results ?? [];
+    return response.data.news ?? [];
   } catch (error) {
     console.error("Failed to fetch news list:", error);
     return [];
@@ -240,30 +240,118 @@ export async function getReportDetail(
   }
 }
 
-// 특정 신고 수정 api (put)
-export async function putReport(
-  report_id: string,
-  body: ReportEdit
-): Promise<ReportEdit> {
-  const URL = `/api/reports/${report_id}/`;
-  const updatedReport: ReportEdit = body;
-  return updatedReport;
-}
-
-// 특정 신고 부분 수정 api (patch, 사실상 put과 동일하게 구현)
+// 특정 신고 수정 api (patch - 연결 완료, multipart/form-data 지원)
 export async function patchReport(
   report_id: string,
-  body: ReportEdit
+  body: ReportEdit,
+  newPhotoUri?: string | null // 새로 선택한 사진 URI (로컬 파일)
 ): Promise<ReportEdit> {
   const URL = `/api/reports/${report_id}/`;
-  const updatedReport: ReportEdit = body;
-  return updatedReport;
+  console.log("========== patchReport 요청 시작 ==========");
+  console.log("patchReport - Request Body:", JSON.stringify(body, null, 2));
+  console.log("patchReport - New Photo URI:", newPhotoUri);
+
+  try {
+    // FormData 생성
+    const formData = new FormData();
+
+    // 기본 필드 추가
+    formData.append("latitude", body.latitude.toString());
+    formData.append("longitude", body.longitude.toString());
+    formData.append("type", body.type);
+    formData.append("level", body.level.toString());
+    formData.append("title", body.title);
+    formData.append("place", body.place);
+    formData.append("description", body.description);
+    formData.append("addr_a", body.addr_a);
+    formData.append("addr_b", body.addr_b);
+    formData.append("addr_c", body.addr_c);
+    formData.append("addr_d", body.addr_d);
+    formData.append("state", body.state);
+
+    // FormData 내용 로그
+    console.log("FormData 필드:");
+    console.log("  - latitude:", body.latitude.toString());
+    console.log("  - longitude:", body.longitude.toString());
+    console.log("  - type:", body.type);
+    console.log("  - level:", body.level.toString());
+    console.log("  - title:", body.title);
+    console.log("  - place:", body.place);
+    console.log("  - description:", body.description);
+    console.log("  - addr_a:", body.addr_a);
+    console.log("  - addr_b:", body.addr_b);
+    console.log("  - addr_c:", body.addr_c);
+    console.log("  - addr_d:", body.addr_d);
+
+    // 새 사진 파일 추가 (있는 경우)
+    if (newPhotoUri) {
+      const filename = newPhotoUri.split("/").pop() || "photo.jpg";
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1].toLowerCase()}` : "image/jpeg";
+
+      // React Native FormData 형식으로 파일 추가
+      formData.append("photos", {
+        uri: newPhotoUri,
+        name: filename,
+        type: type,
+      } as any);
+
+      console.log("New photo added to FormData:", {
+        uri: newPhotoUri,
+        name: filename,
+        type,
+      });
+    } else {
+      console.log("  - photos: 새 사진 없음 (기존 유지)");
+    }
+
+    console.log("========== API 호출 중... ==========");
+
+    // Content-Type을 설정하지 않으면 axios가 자동으로 multipart/form-data + boundary 설정
+    const response = await api.patch<ReportEdit>(URL, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      transformRequest: (data) => data, // FormData를 변환하지 않고 그대로 전송
+    });
+    console.log("patchReport - Response:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error("========== patchReport 에러 ==========");
+    console.error("Failed to update report:", error);
+    if (error.response) {
+      console.error("에러 상태 코드:", error.response.status);
+      console.error(
+        "에러 응답 데이터:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+      console.error("에러 응답 헤더:", error.response.headers);
+    }
+    throw error;
+  }
 }
 
-// 특정 신고 삭제 api
+// 특정 신고 삭제 api (연결 완료)
 export async function deleteReport(report_id: string): Promise<void> {
   const URL = `/api/reports/${report_id}/`;
-  return;
+  console.log("========== deleteReport 요청 시작 ==========");
+  console.log("deleteReport - report_id:", report_id);
+
+  try {
+    const response = await api.delete(URL);
+    console.log("deleteReport - Response:", response.status);
+  } catch (error: any) {
+    console.error("========== deleteReport 에러 ==========");
+    console.error("Failed to delete report:", error);
+    if (error.response) {
+      console.error("에러 상태 코드:", error.response.status);
+      console.error(
+        "에러 응답 데이터:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+    }
+    throw error;
+  }
 }
 
 // 특정 신고 반응 목록 가져오기 api

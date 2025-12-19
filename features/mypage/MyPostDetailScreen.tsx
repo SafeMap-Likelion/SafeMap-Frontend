@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Box,
   HStack,
@@ -10,7 +11,7 @@ import {
   ArrowLeftIcon,
   ScrollView,
 } from "@gluestack-ui/themed";
-import { Image as RNImage, View, ActivityIndicator } from "react-native";
+import { Image as RNImage, View, ActivityIndicator, Alert } from "react-native";
 import EmojiSelector from "react-native-emoji-selector";
 import {
   VStack,
@@ -25,7 +26,7 @@ import {
   ModalCloseButton,
   ModalBody,
 } from "@gluestack-ui/themed";
-import { getReportDetail } from "@/api/apis";
+import { getReportDetail, deleteReport } from "@/api/apis";
 import { ReportDetail, Photo } from "@/api/types";
 
 // MinIO 이미지 URL 변환
@@ -112,17 +113,19 @@ function RiskBadge({ type, level }: { type: string; level: number }) {
   );
 }
 
-// 게시물 제목+장소+날짜 컴포넌트 (수정 버튼 포함)
+// 게시물 제목+장소+날짜 컴포넌트 (수정/삭제 버튼 포함)
 function PostTitle({
   title,
   place,
   createdAt,
   onEditPress,
+  onDeletePress,
 }: {
   title: string;
   place: string;
   createdAt: string;
   onEditPress?: () => void;
+  onDeletePress?: () => void;
 }) {
   return (
     <>
@@ -140,19 +143,34 @@ function PostTitle({
         >
           {title}
         </Heading>
-        {onEditPress && (
-          <Pressable
-            bg="#1C9DFF"
-            px={10}
-            py={5}
-            borderRadius={20}
-            onPress={onEditPress}
-          >
-            <Text color="$white" fontSize={16} fontWeight="$bold">
-              수정
-            </Text>
-          </Pressable>
-        )}
+        <HStack space="sm">
+          {onEditPress && (
+            <Pressable
+              bg="#1C9DFF"
+              px={10}
+              py={5}
+              borderRadius={20}
+              onPress={onEditPress}
+            >
+              <Text color="$white" fontSize={16} fontWeight="$bold">
+                수정
+              </Text>
+            </Pressable>
+          )}
+          {onDeletePress && (
+            <Pressable
+              bg="#FF4444"
+              px={10}
+              py={5}
+              borderRadius={20}
+              onPress={onDeletePress}
+            >
+              <Text color="$white" fontSize={16} fontWeight="$bold">
+                삭제
+              </Text>
+            </Pressable>
+          )}
+        </HStack>
       </HStack>
       <Text fontSize={15} fontWeight="$semibold" style={{ marginBottom: 15 }}>
         📍{place}
@@ -191,9 +209,11 @@ function AutoHeightImage({ uri, style, ...props }: any) {
 function PostContent({
   reportDetail,
   onEditPress,
+  onDeletePress,
 }: {
   reportDetail: ReportDetail;
   onEditPress?: () => void;
+  onDeletePress?: () => void;
 }) {
   const [isModalVisible, setModalVisible] = useState(false);
   const [reactions, setReactions] = useState<{ [key: string]: number }>({});
@@ -229,6 +249,7 @@ function PostContent({
         place={reportDetail.place}
         createdAt={reportDetail.created_at}
         onEditPress={onEditPress}
+        onDeletePress={onDeletePress}
       />
       <Text fontSize={14} color="$black" style={{ marginBottom: 18 }}>
         {reportDetail.description}
@@ -324,32 +345,57 @@ export default function MyPostDetailScreen() {
   const [reportDetail, setReportDetail] = useState<ReportDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // API에서 신고 상세 정보 가져오기
-  useEffect(() => {
-    const loadReportDetail = async () => {
-      if (!report_id) {
-        console.error("report_id가 없습니다");
-        setIsLoading(false);
-        return;
-      }
+  // 화면에 포커스될 때마다 신고 상세 정보 새로고침
+  useFocusEffect(
+    useCallback(() => {
+      const loadReportDetail = async () => {
+        if (!report_id) {
+          console.error("report_id가 없습니다");
+          setIsLoading(false);
+          return;
+        }
 
-      try {
-        setIsLoading(true);
-        const detail = await getReportDetail(report_id);
-        setReportDetail(detail);
-        console.log("신고 상세 정보 로드 완료:", detail);
-      } catch (error) {
-        console.error("신고 상세 정보 로드 실패:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        try {
+          setIsLoading(true);
+          const detail = await getReportDetail(report_id);
+          setReportDetail(detail);
+          console.log("신고 상세 정보 로드 완료:", detail);
+        } catch (error) {
+          console.error("신고 상세 정보 로드 실패:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
 
-    loadReportDetail();
-  }, [report_id]);
+      loadReportDetail();
+    }, [report_id])
+  );
 
   const handleEdit = () => {
     router.push(`/(main)/post-edit?report_id=${report_id}`);
+  };
+
+  const handleDelete = () => {
+    Alert.alert("신고 삭제", "정말로 이 신고를 삭제하시겠습니까?", [
+      {
+        text: "취소",
+        style: "cancel",
+      },
+      {
+        text: "삭제",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteReport(report_id!);
+            Alert.alert("성공", "신고가 삭제되었습니다.");
+            router.back();
+          } catch (error) {
+            Alert.alert("오류", "신고 삭제에 실패했습니다.");
+            console.error("Delete error:", error);
+          }
+        },
+      },
+    ]);
   };
 
   if (isLoading) {
@@ -403,8 +449,12 @@ export default function MyPostDetailScreen() {
           <RiskBadge type={reportDetail.type} level={reportDetail.level} />
         </HStack>
 
-        {/* 게시물 내용 (수정 버튼은 제목 옆에) */}
-        <PostContent reportDetail={reportDetail} onEditPress={handleEdit} />
+        {/* 게시물 내용 (수정/삭제 버튼은 제목 옆에) */}
+        <PostContent
+          reportDetail={reportDetail}
+          onEditPress={handleEdit}
+          onDeletePress={handleDelete}
+        />
       </ScrollView>
     </Box>
   );
