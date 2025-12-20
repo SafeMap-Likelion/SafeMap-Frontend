@@ -122,6 +122,10 @@ export type ReportReaction = {
   num: number;
 };
 
+export type ReactionId = {
+  reaction_id: string;
+};
+
 export type Emoji = {
   emoji: string;
 };

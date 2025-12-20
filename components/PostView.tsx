@@ -23,7 +23,12 @@ import {
 } from "@gluestack-ui/themed";
 import { FontAwesome } from "@expo/vector-icons";
 import { ReportDetail, ReportReaction } from "@/api/types";
-import { getReportReactionList, postReportReaction } from "@/api/apis";
+import {
+  getReportReactionList,
+  postReportReaction,
+  putReportReaction,
+  deleteReportReaction,
+} from "@/api/apis";
 
 // 간단한 이모지 목록 (Android 폰트 버그 대응)
 const SIMPLE_EMOJIS = [
@@ -244,8 +249,9 @@ function PostContent({
 }) {
   const [isModalVisible, setModalVisible] = useState(false);
   const [reactions, setReactions] = useState<ReportReaction[]>([]);
-  const [userReactions, setUserReactions] = useState<string[]>([]);
+  const [myReaction, setMyReaction] = useState<string | null>(null); // 내 반응 (1개만 가능)
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false); // API 호출 중 상태
 
   // 초기 반응 목록 가져오기
   useEffect(() => {
@@ -262,41 +268,91 @@ function PostContent({
     fetchReactions();
   }, [reportId]);
 
-  const handleEmojiSelect = async (emoji: string) => {
-    setModalVisible(false);
-
-    // API 호출 (mocking된 상태)
+  // 반응 목록 새로고침
+  const refreshReactions = async () => {
     try {
-      await postReportReaction(reportId, { emoji });
+      const reactionList = await getReportReactionList(reportId);
+      setReactions(reactionList);
     } catch (error) {
-      console.error("Failed to post reaction:", error);
+      console.error("Failed to refresh reactions:", error);
     }
+  };
 
-    // 이미 내가 반응한 이모지인지 확인
-    const alreadyReacted = userReactions.includes(emoji);
+  const handleEmojiSelect = async (emoji: string) => {
+    if (isProcessing) return;
+    setModalVisible(false);
+    setIsProcessing(true);
 
-    if (alreadyReacted) {
-      // 이미 반응한 이모지면 취소 (count 감소)
-      setReactions((prev) =>
-        prev
-          .map((r) => (r.emoji === emoji ? { ...r, num: r.num - 1 } : r))
-          .filter((r) => r.num > 0)
-      );
-      setUserReactions((prev) => prev.filter((e) => e !== emoji));
-    } else {
-      // 새 반응 추가
-      const existingReaction = reactions.find((r) => r.emoji === emoji);
-      if (existingReaction) {
-        // 기존 이모지에 count 증가
+    try {
+      if (myReaction === emoji) {
+        // 같은 이모지 클릭 → 반응 삭제
+        await deleteReportReaction(reportId);
+        setMyReaction(null);
+        // 로컬 상태 업데이트
         setReactions((prev) =>
-          prev.map((r) => (r.emoji === emoji ? { ...r, num: r.num + 1 } : r))
+          prev
+            .map((r) => (r.emoji === emoji ? { ...r, num: r.num - 1 } : r))
+            .filter((r) => r.num > 0)
         );
+      } else if (myReaction) {
+        // 이미 다른 반응이 있음 → 반응 수정 (PUT)
+        await putReportReaction(reportId, { emoji });
+        const oldEmoji = myReaction;
+        setMyReaction(emoji);
+        // 로컬 상태 업데이트
+        setReactions((prev) => {
+          let updated = prev
+            .map((r) => (r.emoji === oldEmoji ? { ...r, num: r.num - 1 } : r))
+            .filter((r) => r.num > 0);
+
+          const existingNew = updated.find((r) => r.emoji === emoji);
+          if (existingNew) {
+            updated = updated.map((r) =>
+              r.emoji === emoji ? { ...r, num: r.num + 1 } : r
+            );
+          } else {
+            updated = [...updated, { emoji, num: 1 }];
+          }
+          return updated;
+        });
       } else {
-        // 새 이모지 추가
-        setReactions((prev) => [...prev, { emoji, num: 1 }]);
+        // 반응 없음 → 새 반응 생성 (POST)
+        await postReportReaction(reportId, { emoji });
+        setMyReaction(emoji);
+        // 로컬 상태 업데이트
+        setReactions((prev) => {
+          const existing = prev.find((r) => r.emoji === emoji);
+          if (existing) {
+            return prev.map((r) =>
+              r.emoji === emoji ? { ...r, num: r.num + 1 } : r
+            );
+          } else {
+            return [...prev, { emoji, num: 1 }];
+          }
+        });
       }
-      setUserReactions((prev) => [...prev, emoji]);
+    } catch (error: any) {
+      // console.error("Reaction error:", error);
+      // 에러 시 서버에서 최신 상태 다시 가져오기
+      await refreshReactions();
+
+      // 400 에러 (이미 반응함) → PUT으로 수정 시도
+      if (error?.response?.status === 400 && !myReaction) {
+        try {
+          await putReportReaction(reportId, { emoji });
+          setMyReaction(emoji);
+          await refreshReactions();
+        } catch (putError) {
+          // console.error("PUT fallback failed:", putError);
+        }
+      }
+    } finally {
+      setIsProcessing(false);
     }
+  };
+
+  const handleReactionPress = (emoji: string) => {
+    handleEmojiSelect(emoji);
   };
 
   return (
@@ -333,11 +389,13 @@ function PostContent({
       {/* Slack 스타일 반응 표시 */}
       <HStack flexWrap="wrap" style={{ gap: 8, marginTop: 10 }}>
         {reactions.map((reaction) => {
-          const isMyReaction = userReactions.includes(reaction.emoji);
+          const isMyReaction = myReaction === reaction.emoji;
           return (
             <Pressable
               key={reaction.emoji}
-              onPress={() => handleEmojiSelect(reaction.emoji)}
+              onPress={() => handleReactionPress(reaction.emoji)}
+              disabled={isProcessing}
+              opacity={isProcessing ? 0.6 : 1}
             >
               <Badge
                 backgroundColor={isMyReaction ? "#E3F2FD" : "#F3F3F3"}
@@ -361,7 +419,10 @@ function PostContent({
           );
         })}
         {/* 반응 추가 버튼 */}
-        <Pressable onPress={() => setModalVisible(true)}>
+        <Pressable
+          onPress={() => setModalVisible(true)}
+          disabled={isProcessing}
+        >
           <Badge
             backgroundColor="#F3F3F3"
             borderRadius={20}
