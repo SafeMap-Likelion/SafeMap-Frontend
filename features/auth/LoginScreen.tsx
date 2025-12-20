@@ -49,7 +49,7 @@ export default function LoginScreen() {
                 color: "#000",
               }}
             >
-              Safety
+              Safe
             </Text>
             <Text
               style={{
