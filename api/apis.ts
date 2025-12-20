@@ -366,14 +366,44 @@ export async function getReportReactionList(
 export async function postReportReaction(
   report_id: string,
   body: Emoji
+): Promise<{ reaction_id: string }> {
+  const URL = `/api/reports/${report_id}/reactions/`;
+
+  try {
+    const response = await api.post<{ reaction_id: string }>(URL, body);
+    console.log("postReportReaction - Response:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Failed to post report reaction:", error);
+    throw error;
+  }
+}
+
+// 특정 신고 반응 수정 api (PUT)
+export async function putReportReaction(
+  report_id: string,
+  body: Emoji
 ): Promise<void> {
   const URL = `/api/reports/${report_id}/reactions/`;
 
   try {
-    const response = await api.post(URL, body);
-    console.log("postReportReaction - Response:", response.data);
+    const response = await api.put(URL, body);
+    console.log("putReportReaction - Response:", response.data);
   } catch (error) {
-    console.error("Failed to post report reaction:", error);
+    console.error("Failed to update report reaction:", error);
+    throw error;
+  }
+}
+
+// 특정 신고 반응 삭제 api (DELETE)
+export async function deleteReportReaction(report_id: string): Promise<void> {
+  const URL = `/api/reports/${report_id}/reactions/`;
+
+  try {
+    await api.delete(URL);
+    console.log("deleteReportReaction - Success");
+  } catch (error) {
+    console.error("Failed to delete report reaction:", error);
     throw error;
   }
 }
@@ -438,6 +468,14 @@ export async function getUserReportList(): Promise<ReportAbstract[]> {
     return [];
   }
 }
-function dedupeFavoriteRegions(body: FavoriteRegion[]) {
-  throw new Error("Function not implemented.");
+function dedupeFavoriteRegions(body: FavoriteRegion[]): FavoriteRegion[] {
+  const seen = new Set<string>();
+  return body.filter((region) => {
+    const key = `${region.type}|${region.addr_a}|${region.addr_b}|${region.addr_c}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
